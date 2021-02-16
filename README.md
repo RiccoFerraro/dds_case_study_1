@@ -1,2 +1,2 @@
 # dds_case_study_1
-Cook book here and more!
+Cook book here
