@@ -1,0 +1,107 @@
+---
+title: "brewsTest"
+author: "Kebur Fantahun"
+date: "02/21/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load-packages, include=FALSE}
+library(tidyverse)
+library(magrittr)
+library(knitr)
+library(rmarkdown)
+library(DT)
+library(mice)
+library(VIM)
+```
+```{r}
+## Including Plots
+# (Plot guide from initial R markdown example online)
+# You can also embed plots, for example:
+# ```{r pressure, echo=FALSE}
+# plot(pressure)
+# ```
+# Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```
+
+# Import Data
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library (readr)
+
+beer_url="https://raw.githubusercontent.com/RiccoFerraro/dds_case_study_1/main/Beers.csv?token=AJ6R3O5PU6YT2DDEIUZTQ5DAHIFFU"
+brewery_url="https://raw.githubusercontent.com/RiccoFerraro/dds_case_study_1/main/Breweries.csv?token=AJ6R3O6A7SJRNWAGTPCHSWLAHIFFY"
+
+beer <-read_csv(url(beer_url))
+brew <-read_csv(url(brewery_url))
+
+## EDA: Formatting, and dealing with NA's
+
+# beer$Brewery_id
+# names(beer)[names(beer) == "Brewery_id"] <- "Brew_ID"
+
+bdat = merge(beer, brew, by.x = "Brewery_id", by.y = "Brew_ID")
+names(bdat)[names(bdat) == "Name.x"] <- "Drink_name"
+names(bdat)[names(bdat) == "Name.y"] <- "Brewery"
+
+```
+# 1. How many breweries are in each state?
+# Look at the count of "Brewery ID" for number of unique breweries
+#; could include state in this table
+```{r}
+brewNum = bdat %>% 
+  filter(!is.na(bdat)) %>% 
+  group_by(Brewery) %>% 
+  count()
+brewNum
+# 551 breweries in total
+dim(brewNum)
+```
+# toggleable table
+```{r}
+datatable(brewNum)
+```
+# write table into text file for number of breweries of any type in each state
+```{r}
+write.table(brewNum, file = "brewNum.txt", sep = ",", quote = FALSE, row.names = F)
+```
+# 2.   Merge beer data with the breweries data. 
+```{r}
+kable(head(bdat))
+kable(tail(bdat))
+```
+# 3. Assess missing data
+```{r}
+
+# summary(bdat)
+# Found some NA's
+# table(is.na(bdat))
+#
+# FALSE  TRUE 
+# 23033  1067
+
+# prints only NA data
+datatable(bdat %>%
+  filter(is.na(ABV)))
+
+# Special Release, The Crowler^tm, Can'd aid foundation are missing ABV/IBU/Style
+# The rest can be imputed based on their Style
+
+bdat_mice <- aggr(bdat, col=c('navyblue','yellow'),
+                    numbers=TRUE, sortVars=TRUE,
+                    labels=names(bdat), cex.axis=.7,
+                    gap=3, ylab=c("Missing data","Pattern"))
+# very small percentage of the data is NA but we will still impute for analysis purposes
+```
+
+
+# 5.   Which state has the maximum alcoholic (ABV) beer? Which state has the most bitter (IBU) beer?
+```{r}
+kable(head(arrange(bdat, desc(ABV))))
+kable(head(arrange(bdat, desc(IBU))))
+```
+
