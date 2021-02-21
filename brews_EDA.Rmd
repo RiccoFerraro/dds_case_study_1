@@ -2,7 +2,9 @@
 title: "brewsTest"
 author: "Kebur Fantahun"
 date: "02/21/2021"
-output: html_document
+output:
+  html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -29,7 +31,7 @@ library(psych)
 # Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
 ```
 
-#Utility functions 
+# Utility functions 
 ```{r}
 
 isEmpty <- function(column) {
@@ -49,7 +51,7 @@ brewery_url="https://raw.githubusercontent.com/RiccoFerraro/dds_case_study_1/mai
 beer <-read_csv(url(beer_url))
 brew <-read_csv(url(brewery_url))
 ```
-Note: we use the merge data in Question 1 and therefor we need to perform step 2 first.  
+*Note: we use the merge data in Question 1 and therefor we need to perform step 2 first.*
 # 2. Merge beer data first with the breweries data & Print first 6 and last 6 oservations in merged file. 
 ```{r}
 ## EDA: Formatting, and dealing with NA's
@@ -71,7 +73,6 @@ kable(tail(bdat))
 See Table:
 ```{r}
 bdat$State = as.factor(bdat$State)
-glimpse(brewNum)
 brewNum = bdat %>% 
   filter(!is.na(bdat) & !is.na(Brewery_id)) %>% 
   group_by(State) %>% summarize(unique_breweries=length(unique(Brewery_id))) 
@@ -82,15 +83,17 @@ print("Total Unique Breweries: ")
 sum(brewNum$unique_breweries)
 ```
 
-#3 a. Plot missing data for reference
+# 3a. Plot missing data for reference
 ```{r}
 # Plot missing data (there should be none)
 bdat_mice_clean <- aggr(bdat, col=c('navyblue','yellow'),
                     numbers=TRUE, sortVars=TRUE,
-                    labels=names(bdat.imputed.IBU.clean), cex.axis=.7,
+                    labels=names(bdat), cex.axis=.7,
                     gap=3, ylab=c("Missing data","Pattern"))
 summary(bdat)
 ```
+
+
 
 #3.b. Assess missing data when no data exists for IBU OR ABV
 -Special Release, The Crowler^tm, Can'd aid foundation are missing ABV/IBU/Style
@@ -111,6 +114,8 @@ bdat_clean <- bdat %>% filter(bdat$Beer_ID!=2210 & bdat$Beer_ID!=1796 & bdat$Bee
 bdat$Beer_ID!=2322& bdat$Beer_ID!=1750& bdat$Beer_ID!=710& bdat$Beer_ID!=273& bdat$Beer_ID!=1095& bdat$Beer_ID!=963)
 
 ```
+
+
 
 #3 c. Assess and impute missing data when by hand when data is availbe publicaly. 
 -Add style data for 2527 and 1635 by looking it up by hand. 
@@ -134,7 +139,9 @@ bdat_with_hand_updates = merge(bdat_hand_updated,bdat_clean,by="Beer_ID",all.y =
 =Ounces.y, Brewery=Brewery.y, City=City.y, State=State.y, Style = imputeMissingStyle(Beer_ID, Style.y),IBU = if_else(isEmpty(IBU.y), IBU.x, IBU.y), ABV = if_else(isEmpty(ABV.y), ABV.x, ABV.y)) %>% select(Brewery_id, ABV, IBU, Drink_name, Style, Ounces, Brewery, City, State)
 ```
 
-#3 d. Assess and impute missing IBU data with median IBU by style 
+
+
+# 3d. Assess and impute missing IBU data with median IBU by style 
 ```{r}
 # Impute IBU
 bdat.IBU.Summary <- bdat_with_hand_updates %>% filter(!isEmpty(IBU)) %>% group_by(Style) %>% summarise(median_IBU_by_style=median(IBU))
@@ -143,7 +150,9 @@ bdat.imputed.IBU.clean = bdat.imputed.IBU[,-c(4)]
 bdat.imputed.IBU.clean %>% filter(isEmpty(Style))
 ```
 
-#3 e. Plot missing data to show it has all been resolved. 
+
+
+# 3e. Plot missing data to show it has all been resolved. 
 ```{r}
 # Plot missing data (there should be none)
 bdat_mice_clean <- aggr(bdat.imputed.IBU.clean, col=c('navyblue','yellow'),
@@ -153,12 +162,12 @@ bdat_mice_clean <- aggr(bdat.imputed.IBU.clean, col=c('navyblue','yellow'),
 summary(bdat.imputed.IBU.clean)
 ```
 
+
+
 # 4. Median ABV and IBU per state (See output for values)
 ```{r}
 median.imputed.by.state <- bdat.imputed.IBU.clean  %>% 
   group_by(State) %>% summarize(median_abv=median(ABV), median_ibu=median(IBU.clean)) 
-
-p<-ggplot(df, aes(x=dose, y=len, color=dose)) 
 
 median.imputed.by.state %>% ggplot(aes(y=median_abv, x=State, fill=State)) + geom_bar(stat="identity")
 datatable(brewNum)
@@ -166,6 +175,9 @@ datatable(brewNum)
 print("Total Unique Breweries: ")
 sum(brewNum$unique_breweries)
 ```
+
+
+
 
 # 5.  Which state has the maximum alcoholic (ABV) beer? Which state has the most bitter (IBU) beer? (See output for values)
 ```{r}
@@ -177,6 +189,10 @@ kable(head(arrange(bdat.imputed.IBU.clean, desc(IBU.clean))))
 print("highest IBU State")
 arrange(bdat.imputed.IBU.clean, desc(IBU.clean))[1,]
 ```
+
+
+
+
 
 # 6. Summary statistics and Histogram for ABV
 ```{r}
