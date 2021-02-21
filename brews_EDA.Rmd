@@ -2,14 +2,25 @@
 title: "brewsTest"
 author: "Kebur Fantahun"
 date: "02/21/2021"
-output: html_document
+output:
+  html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r load-packages, include=FALSE}
+# Introduction 
+## Restatment of problem
+stuff goes heree
+## Dataset
+stuff goes heree
+## Techniques used
+stuff goes heree
+
+# Libraries 
+```{r load-packages}
 library(tidyverse)
 library(magrittr)
 library(knitr)
@@ -17,28 +28,33 @@ library(rmarkdown)
 library(DT)
 library(mice)
 library(VIM)
-```
-```{r}
-## Including Plots
-# (Plot guide from initial R markdown example online)
-# You can also embed plots, for example:
-# ```{r pressure, echo=FALSE}
-# plot(pressure)
-# ```
-# Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
-```
-
-# Import Data
-```{r message=FALSE, warning=FALSE}
+library(psych)
 library(tidyverse)
 library (readr)
+```
+
+
+# Utility functions 
+```{r}
+
+isEmpty <- function(column) {
+    is.na(column) | column == 0 | column == "" | column == " " | column == "NA" | column == "na" | column == "Na" | column == "nA" | column == "NaN" 
+}
+```
+
+
+# Import Data 
+```{r message=FALSE, warning=FALSE}
 
 beer_url="https://raw.githubusercontent.com/RiccoFerraro/dds_case_study_1/main/Beers.csv?token=AJ6R3O5PU6YT2DDEIUZTQ5DAHIFFU"
 brewery_url="https://raw.githubusercontent.com/RiccoFerraro/dds_case_study_1/main/Breweries.csv?token=AJ6R3O6A7SJRNWAGTPCHSWLAHIFFY"
 
 beer <-read_csv(url(beer_url))
 brew <-read_csv(url(brewery_url))
-
+```
+*Note: we use the merge data in Question 1 and therefor we need to perform step 2 first.*
+# 2. Merge beer data first with the breweries data & Print first 6 and last 6 oservations in merged file. 
+```{r}
 ## EDA: Formatting, and dealing with NA's
 
 # beer$Brewery_id
@@ -48,37 +64,39 @@ bdat = merge(beer, brew, by.x = "Brewery_id", by.y = "Brew_ID")
 names(bdat)[names(bdat) == "Name.x"] <- "Drink_name"
 names(bdat)[names(bdat) == "Name.y"] <- "Brewery"
 
-```
-# 1. How many breweries are in each state?
-# Look at the count of "Brewery ID" for number of unique breweries
-#; could include state in this table
-```{r}
-brewNum = bdat %>% 
-  filter(!is.na(bdat)) %>% 
-  group_by(Brewery) %>% 
-  count()
-brewNum
-# 551 breweries in total
-dim(brewNum)
-```
-# toggleable table
-```{r}
-datatable(brewNum)
-```
-# write table into text file for number of breweries of any type in each state
-```{r}
-write.table(brewNum, file = "brewNum.txt", sep = ",", quote = FALSE, row.names = F)
-```
-# 2.   Merge beer data with the breweries data. 
-```{r}
 kable(head(bdat))
 kable(tail(bdat))
 
-isEmpty <- function(column) {
-    is.na(column) | column == 0 | column == "" | column == " " | column == "NA" | column == "na" | column == "Na" | column == "nA" | column == "NaN" 
-}
 ```
-#3. Assess missing data
+
+
+# 1. How many breweries are in each state?
+See Table:
+```{r}
+bdat$State = as.factor(bdat$State)
+brewNum = bdat %>% 
+  filter(!is.na(bdat) & !is.na(Brewery_id)) %>% 
+  group_by(State) %>% summarize(unique_breweries=length(unique(Brewery_id))) 
+
+datatable(brewNum)
+
+print("Total Unique Breweries: ")
+sum(brewNum$unique_breweries)
+```
+
+# 3a. Plot missing data for reference
+```{r}
+# Plot missing data (there should be none)
+bdat_mice_clean <- aggr(bdat, col=c('navyblue','yellow'),
+                    numbers=TRUE, sortVars=TRUE,
+                    labels=names(bdat), cex.axis=.7,
+                    gap=3, ylab=c("Missing data","Pattern"))
+summary(bdat)
+```
+
+
+
+# 3b. Assess missing data when no data exists for IBU OR ABV
 -Special Release, The Crowler^tm, Can'd aid foundation are missing ABV/IBU/Style
 -The rest can be imputed based on their Style
 -Cedar creek - Special Release is ambiguous, missing ABV/IBU/Style and will be dropped as it does not solve the QOI. 
@@ -92,41 +110,17 @@ isEmpty <- function(column) {
 -1095 no data
 -963 no data
 ```{r}
-
-# summary(bdat_test)
-# Found some NA's
-# table(is.na(bdat))
-#
-# FALSE  TRUE 
-# 23033  1067
-
-# prints only NA data
-# datatable(bdat %>%
-#  filter(is.na(ABV) & is.na(IBU)))
-
-# how many data points are missing both abv and ibu
-# dim(bdat %>%
-#  filter(is.na(ABV) & is.na(IBU)))
-
-# We searched by hand for ABV/IBU values when both were missing, if only one was missing we will impute. 
-
 # the following line removes these NA points
 bdat_clean <- bdat %>% filter(bdat$Beer_ID!=2210 & bdat$Beer_ID!=1796 & bdat$Beer_ID!=1790 & bdat$Beer_ID!=2364&
 bdat$Beer_ID!=2322& bdat$Beer_ID!=1750& bdat$Beer_ID!=710& bdat$Beer_ID!=273& bdat$Beer_ID!=1095& bdat$Beer_ID!=963)
 
-# bdat_mice <- aggr(bdat_test, col=c('navyblue','yellow'),
-#                     numbers=TRUE, sortVars=TRUE,
-#                     labels=names(bdat), cex.axis=.7,
-#                     gap=3, ylab=c("Missing data","Pattern"))
-
-# very small percentage of the data is NA but we will still impute for analysis purposes
-# summary(bdat$Style)
-
-# check Style for NA
-# bdat_clean %>% filter(isEmpty(Style))
-
 ```
 
+
+
+# 3c. Assess and impute missing data when by hand when data is availbe publicaly. 
+-Add style data for 2527 and 1635 by looking it up by hand. 
+-Add IBU and ABV Data for many missing rows by looking up by hand (online via `BeerAdvocate.com` or `Untappd.com`)
 ```{r}
 imputeMissingStyle <- function(beer_id, style){
     if(beer_id=="2527"){
@@ -141,38 +135,27 @@ imputeMissingStyle <- function(beer_id, style){
 # Update ABV and IBU for NA's; to hand selected data use  %>% select(Beer_ID, Brewery, Drink_name, ABV, IBU)
 bdat_hand_updated <-bdat_clean %>% 
     filter(is.na(ABV) & is.na(IBU)) %>% rows_update(tibble(Beer_ID = c(2382, 2381, 1948, 1347, 2595, 1163, 940, 2490, 2489, 2488, 2487, 2472, 779, 364, 60, 59, 58, 57, 652, 2344, 2342, 1752, 61, 1724, 774, 121, 1784, 1541, 1025, 219, 307, 1096, 1056, 944, 731, 870, 869, 868, 867, 763, 504, 524, 450, 449, 448, 447, 446, 520, 506, 142, 335, 64), ABV = c(0.075, 0.055, 0.045, 0.060, 0.062, 0.0499, 0.06, 0.061, 0.038, 0.057, 0.051, 0.055, 0.05, 0.07, 0.052, 0.05, 0.049, 0.051, 0.07, 0.055, 0.049, 0.07, 0.052, 0.07, 0.058, 0.052, 0.07, 0.052, 0.086, 0.051, 0.06, 0.062, 0.055, 0.05, 0.055, 0.042, 0.05, 0.045, 0.039, 0.052, 0.072, 0.045, 0.061, 0.064, 0.058, 0.049, 0.05, 0.042, 0.05, 0.065, 0.065, 0.05), IBU = c(NA, 3.57, 65, 23, NA, 15, NA, 40, 7, 32, 35, NA, 5, NA, NA, NA, NA, NA, 80, NA, NA, NA, 28, NA, NA, 12, 40, 21, 80, NA, 38, NA, NA, 25, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, 70, 17)))
-#bdat_hand_updated
 
 bdat_with_hand_updates = merge(bdat_hand_updated,bdat_clean,by="Beer_ID",all.y = TRUE) %>% rowwise %>% mutate(Brewery_id=Brewery_id.y, Drink_name=Drink_name.y, Ounces
 =Ounces.y, Brewery=Brewery.y, City=City.y, State=State.y, Style = imputeMissingStyle(Beer_ID, Style.y),IBU = if_else(isEmpty(IBU.y), IBU.x, IBU.y), ABV = if_else(isEmpty(ABV.y), ABV.x, ABV.y)) %>% select(Brewery_id, ABV, IBU, Drink_name, Style, Ounces, Brewery, City, State)
-#bdat_with_hand_updates
+```
 
-bdat_with_hand_updates %>% filter(isEmpty(Style))
-bdat_with_hand_updates %>% filter(Brewery_id=="67")
 
-# which(is.na(bdat_with_hand_updates$ABV) | is.na(bdat_with_hand_updates$IBU))
 
+# 3d. Assess and impute missing IBU data with median IBU by style 
+```{r}
 # Impute IBU
 bdat.IBU.Summary <- bdat_with_hand_updates %>% filter(!isEmpty(IBU)) %>% group_by(Style) %>% summarise(median_IBU_by_style=median(IBU))
-#bdat.IBU.Summary
-
 bdat.imputed.IBU <-merge(bdat_with_hand_updates, bdat.IBU.Summary, by="Style")  %>% mutate(IBU.clean = if_else(isEmpty(IBU), median_IBU_by_style, as.double(IBU)))
-#bdat.imputed.IBU
-
 bdat.imputed.IBU.clean = bdat.imputed.IBU[,-c(4)]
-#bdat.imputed.IBU.clean
-
 bdat.imputed.IBU.clean %>% filter(isEmpty(Style))
+```
 
-# Impute ABV
-# bdat.ABV.Summary <- bdat.imputed.IBU %>% filter(!isEmpty(ABV)) %>% group_by(Style) %>% summarise(median_ABV_by_style=median(ABV))
-# bdat.ABV.Summary
 
-# bdat.imputed.ABV_IBU <-merge(bdat.imputed.IBU, bdat.ABV.Summary, by="Style")  %>% mutate(ABV.clean = if_else(isEmpty(ABV), median_ABV_by_style, as.double(ABV)))
-# bdat.imputed.ABV_IBU
 
-# which(is.na(bdat.imputed.ABV_IBU$ABV.clean) | is.na(bdat.imputed.ABV_IBU$IBU.clean))
-
+# 3e. Plot missing data to show it has all been resolved. 
+```{r}
+# Plot missing data (there should be none)
 bdat_mice_clean <- aggr(bdat.imputed.IBU.clean, col=c('navyblue','yellow'),
                     numbers=TRUE, sortVars=TRUE,
                     labels=names(bdat.imputed.IBU.clean), cex.axis=.7,
@@ -182,9 +165,56 @@ summary(bdat.imputed.IBU.clean)
 
 
 
-# 5.   Which state has the maximum alcoholic (ABV) beer? Which state has the most bitter (IBU) beer?
+# 4. Median ABV and IBU per state (See output for values)
 ```{r}
-kable(head(arrange(bdat, desc(ABV))))
-kable(head(arrange(bdat, desc(IBU))))
+median.imputed.by.state <- bdat.imputed.IBU.clean  %>% 
+  group_by(State) %>% summarize(median_abv=median(ABV), median_ibu=median(IBU.clean)) 
+
+median.imputed.by.state %>% ggplot(aes(y=median_abv, x=State, fill=State)) + geom_bar(stat="identity")
+datatable(brewNum)
+
+print("Total Unique Breweries: ")
+sum(brewNum$unique_breweries)
 ```
 
+
+
+
+# 5.  Which state has the maximum alcoholic (ABV) beer? Which state has the most bitter (IBU) beer? (See output for values)
+```{r}
+kable(head(arrange(bdat.imputed.IBU.clean, desc(ABV))))
+print("highest ABV State")
+arrange(bdat.imputed.IBU.clean, desc(ABV))[1,]
+
+kable(head(arrange(bdat.imputed.IBU.clean, desc(IBU.clean))))
+print("highest IBU State")
+arrange(bdat.imputed.IBU.clean, desc(IBU.clean))[1,]
+```
+
+
+
+
+
+# 6. Summary statistics and Histogram for ABV
+```{r}
+summary(bdat.imputed.IBU.clean$ABV)
+describe(bdat.imputed.IBU.clean$ABV)
+
+bdat.imputed.IBU.clean %>% ggplot(aes(x=ABV, fill=State)) + geom_histogram(binwidth = .003)
+bdat.imputed.IBU.clean %>% ggplot(aes(x=IBU.clean, fill=State)) + geom_histogram()
+```
+
+# 7a. Summary statistics and Histogram for ABV
+```{r}
+bdat.imputed.IBU.clean %>% ggplot(aes(x=ABV, y=IBU.clean, colour=State)) + geom_point() + ggtitle("IBU vs ABV")
+bdat.imputed.IBU.clean %>% ggplot(aes(x=ABV, y=IBU.clean)) + geom_smooth() + ggtitle("IBU vs ABV")
+```
+
+# 7b. EDA continued
+TODO: Speak to Assumptions for Linear Regression, and P-value and confidence interval for ABV estimate, scope of inference
+```{r}
+#Linear-Linear
+linearlinear <- lm(IBU.clean~State + ABV, data=bdat.imputed.IBU.clean)
+plot(linearlinear)
+summary(linearlinear)
+```
