@@ -95,7 +95,7 @@ summary(bdat)
 
 
 
-#3.b. Assess missing data when no data exists for IBU OR ABV
+# 3b. Assess missing data when no data exists for IBU OR ABV
 -Special Release, The Crowler^tm, Can'd aid foundation are missing ABV/IBU/Style
 -The rest can be imputed based on their Style
 -Cedar creek - Special Release is ambiguous, missing ABV/IBU/Style and will be dropped as it does not solve the QOI. 
@@ -117,7 +117,7 @@ bdat$Beer_ID!=2322& bdat$Beer_ID!=1750& bdat$Beer_ID!=710& bdat$Beer_ID!=273& bd
 
 
 
-#3 c. Assess and impute missing data when by hand when data is availbe publicaly. 
+# 3c. Assess and impute missing data when by hand when data is availbe publicaly. 
 -Add style data for 2527 and 1635 by looking it up by hand. 
 -Add IBU and ABV Data for many missing rows by looking up by hand (online via `BeerAdvocate.com` or `Untappd.com`)
 ```{r}
@@ -203,13 +203,13 @@ bdat.imputed.IBU.clean %>% ggplot(aes(x=ABV, fill=State)) + geom_histogram(binwi
 bdat.imputed.IBU.clean %>% ggplot(aes(x=IBU.clean, fill=State)) + geom_histogram()
 ```
 
-# 7. Summary statistics and Histogram for ABV
+# 7a. Summary statistics and Histogram for ABV
 ```{r}
 bdat.imputed.IBU.clean %>% ggplot(aes(x=ABV, y=IBU.clean, colour=State)) + geom_point() + ggtitle("IBU vs ABV")
 bdat.imputed.IBU.clean %>% ggplot(aes(x=ABV, y=IBU.clean)) + geom_smooth() + ggtitle("IBU vs ABV")
 ```
 
-#7 EDA continued
+# 7b EDA continued
 TODO: Speak to Assumptions for Linear Regression, and P-value and confidence interval for ABV estimate, scope of inference
 ```{r}
 #Linear-Linear
