@@ -73,8 +73,24 @@ write.table(brewNum, file = "brewNum.txt", sep = ",", quote = FALSE, row.names =
 ```{r}
 kable(head(bdat))
 kable(tail(bdat))
+
+isEmpty <- function(column) {
+    is.na(column) | column == 0 | column == "" | column == " " | column == "NA" | column == "na" | column == "Na" | column == "nA" | column == "NaN" 
+}
 ```
-# 3. Assess missing data
+#3. Assess missing data
+-Special Release, The Crowler^tm, Can'd aid foundation are missing ABV/IBU/Style
+-The rest can be imputed based on their Style
+-Cedar creek - Special Release is ambiguous, missing ABV/IBU/Style and will be dropped as it does not solve the QOI. 
+-Oskar Blues Brewery - The Crowler is not an actual beer but a type of can
+-Oskar Blues Brewery - Can'd aid foundation is a relief effort that sends water so it does not fit in the dataset.
+-Beer ID 2364, Royal Lager of Weston Brewing has no ABV/IBU
+-Same for BID - 2322	Fort Pitt Brewing Company	Fort Pitt Ale
+-Oskar Blues Brewery	Birth IPA, 1750
+-710, no data
+-MillKing It Productions	AXL Pale Ale, 273 - out of business no info
+-1095 no data
+-963 no data
 ```{r}
 
 # summary(bdat_test)
@@ -92,19 +108,6 @@ kable(tail(bdat))
 # dim(bdat %>%
 #  filter(is.na(ABV) & is.na(IBU)))
 
-# Special Release, The Crowler^tm, Can'd aid foundation are missing ABV/IBU/Style
-# The rest can be imputed based on their Style
-# Cedar creek - Special Release is ambiguous, missing ABV/IBU/Style and will be dropped as it does not solve the QOI. 
-# Oskar Blues Brewery - The Crowler is not an actual beer but a type of can
-# Oskar Blues Brewery - Can'd aid foundation is a relief effort that sends water so it does not fit in the dataset.
-# Beer ID 2364, Royal Lager of Weston Brewing has no ABV/IBU
-# Same for BID - 2322	Fort Pitt Brewing Company	Fort Pitt Ale
-# Oskar Blues Brewery	Birth IPA, 1750
-# 710, no data
-# MillKing It Productions	AXL Pale Ale, 273 - out of business no info
-# 1095 no data
-# 963 no data
-
 # We searched by hand for ABV/IBU values when both were missing, if only one was missing we will impute. 
 
 # the following line removes these NA points
@@ -120,7 +123,7 @@ bdat$Beer_ID!=2322& bdat$Beer_ID!=1750& bdat$Beer_ID!=710& bdat$Beer_ID!=273& bd
 # summary(bdat$Style)
 
 # check Style for NA
-bdat_clean %>% filter(isEmpty(Style))
+# bdat_clean %>% filter(isEmpty(Style))
 
 ```
 
@@ -138,30 +141,26 @@ imputeMissingStyle <- function(beer_id, style){
 # Update ABV and IBU for NA's; to hand selected data use  %>% select(Beer_ID, Brewery, Drink_name, ABV, IBU)
 bdat_hand_updated <-bdat_clean %>% 
     filter(is.na(ABV) & is.na(IBU)) %>% rows_update(tibble(Beer_ID = c(2382, 2381, 1948, 1347, 2595, 1163, 940, 2490, 2489, 2488, 2487, 2472, 779, 364, 60, 59, 58, 57, 652, 2344, 2342, 1752, 61, 1724, 774, 121, 1784, 1541, 1025, 219, 307, 1096, 1056, 944, 731, 870, 869, 868, 867, 763, 504, 524, 450, 449, 448, 447, 446, 520, 506, 142, 335, 64), ABV = c(0.075, 0.055, 0.045, 0.060, 0.062, 0.0499, 0.06, 0.061, 0.038, 0.057, 0.051, 0.055, 0.05, 0.07, 0.052, 0.05, 0.049, 0.051, 0.07, 0.055, 0.049, 0.07, 0.052, 0.07, 0.058, 0.052, 0.07, 0.052, 0.086, 0.051, 0.06, 0.062, 0.055, 0.05, 0.055, 0.042, 0.05, 0.045, 0.039, 0.052, 0.072, 0.045, 0.061, 0.064, 0.058, 0.049, 0.05, 0.042, 0.05, 0.065, 0.065, 0.05), IBU = c(NA, 3.57, 65, 23, NA, 15, NA, 40, 7, 32, 35, NA, 5, NA, NA, NA, NA, NA, 80, NA, NA, NA, 28, NA, NA, 12, 40, 21, 80, NA, 38, NA, NA, 25, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, 70, 17)))
-bdat_hand_updated
+#bdat_hand_updated
 
 bdat_with_hand_updates = merge(bdat_hand_updated,bdat_clean,by="Beer_ID",all.y = TRUE) %>% rowwise %>% mutate(Brewery_id=Brewery_id.y, Drink_name=Drink_name.y, Ounces
 =Ounces.y, Brewery=Brewery.y, City=City.y, State=State.y, Style = imputeMissingStyle(Beer_ID, Style.y),IBU = if_else(isEmpty(IBU.y), IBU.x, IBU.y), ABV = if_else(isEmpty(ABV.y), ABV.x, ABV.y)) %>% select(Brewery_id, ABV, IBU, Drink_name, Style, Ounces, Brewery, City, State)
-bdat_with_hand_updates
+#bdat_with_hand_updates
 
 bdat_with_hand_updates %>% filter(isEmpty(Style))
 bdat_with_hand_updates %>% filter(Brewery_id=="67")
 
 # which(is.na(bdat_with_hand_updates$ABV) | is.na(bdat_with_hand_updates$IBU))
 
-isEmpty <- function(column) {
-    is.na(column) | column == 0 | column == "" | column == " " | column == "NA" | column == "na" | column == "Na" | column == "nA" | column == "NaN" 
-}
-
 # Impute IBU
 bdat.IBU.Summary <- bdat_with_hand_updates %>% filter(!isEmpty(IBU)) %>% group_by(Style) %>% summarise(median_IBU_by_style=median(IBU))
-bdat.IBU.Summary
+#bdat.IBU.Summary
 
 bdat.imputed.IBU <-merge(bdat_with_hand_updates, bdat.IBU.Summary, by="Style")  %>% mutate(IBU.clean = if_else(isEmpty(IBU), median_IBU_by_style, as.double(IBU)))
-bdat.imputed.IBU
+#bdat.imputed.IBU
 
 bdat.imputed.IBU.clean = bdat.imputed.IBU[,-c(4)]
-bdat.imputed.IBU.clean
+#bdat.imputed.IBU.clean
 
 bdat.imputed.IBU.clean %>% filter(isEmpty(Style))
 
