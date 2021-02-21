@@ -332,9 +332,9 @@ Mogollon Brewing Company,1
 Monkey Paw Pub & Brewery,3
 Montauk Brewing Company,2
 Morgan Street Brewery,5
-Mother's Brewing,2
 Mother Earth Brew Company,1
 Mother Earth Brewing Company,2
+Mother's Brewing,2
 Mountain Town Brewing Company,1
 Mudshark Brewing Company,5
 Mustang Brewing Company,5
@@ -504,7 +504,7 @@ Tommyknocker Brewery,2
 Tonka Beer Company,2
 Tractor Brewing Company,3
 Triangle Brewing Company,3
-Tröegs Brewing Company,5
+TrÃ¶egs Brewing Company,5
 Twin Lakes Brewing Company,1
 Twisted Pine Brewing Company,1
 Twisted X Brewing Company,3

@@ -17,6 +17,7 @@ library(rmarkdown)
 library(DT)
 library(mice)
 library(VIM)
+library(psych)
 ```
 ```{r}
 ## Including Plots
@@ -53,17 +54,20 @@ names(bdat)[names(bdat) == "Name.y"] <- "Brewery"
 # Look at the count of "Brewery ID" for number of unique breweries
 #; could include state in this table
 ```{r}
+bdat$State = as.factor(bdat$State)
+glimpse(brewNum)
 brewNum = bdat %>% 
-  filter(!is.na(bdat)) %>% 
-  group_by(Brewery) %>% 
-  count()
-brewNum
-# 551 breweries in total
-dim(brewNum)
+  filter(!is.na(bdat) & !is.na(Brewery_id)) %>% 
+  group_by(State) %>% summarize(unique_breweries=length(unique(Brewery_id))) 
+
+datatable(brewNum)
+
+print("Total Unique Breweries: ")
+sum(brewNum$unique_breweries)
 ```
 # toggleable table
 ```{r}
-datatable(brewNum)
+
 ```
 # write table into text file for number of breweries of any type in each state
 ```{r}
@@ -181,10 +185,66 @@ summary(bdat.imputed.IBU.clean)
 ```
 
 
+# 4. Median ABV and IBU per state
+```{r}
+median.imputed.by.state <- bdat.imputed.IBU.clean  %>% 
+  group_by(State) %>% summarize(median_abv=median(ABV), median_ibu=median(IBU.clean)) 
+
+p<-ggplot(df, aes(x=dose, y=len, color=dose)) 
+
+median.imputed.by.state %>% ggplot(aes(y=median_abv, x=State, fill=State)) + geom_bar(stat="identity")
+datatable(brewNum)
+
+print("Total Unique Breweries: ")
+sum(brewNum$unique_breweries)
+```
+
 
 # 5.   Which state has the maximum alcoholic (ABV) beer? Which state has the most bitter (IBU) beer?
 ```{r}
-kable(head(arrange(bdat, desc(ABV))))
-kable(head(arrange(bdat, desc(IBU))))
-```
+kable(head(arrange(bdat.imputed.IBU.clean, desc(ABV))))
+print("highest ABV State")
+arrange(bdat.imputed.IBU.clean, desc(ABV))[1,]
 
+kable(head(arrange(bdat.imputed.IBU.clean, desc(IBU.clean))))
+print("highest IBU State")
+arrange(bdat.imputed.IBU.clean, desc(IBU.clean))[1,]
+```
+# 6. Summary statistics and Histogram for ABV
+```{r}
+summary(bdat.imputed.IBU.clean$ABV)
+describe(bdat.imputed.IBU.clean$ABV)
+
+bdat.imputed.IBU.clean %>% ggplot(aes(x=ABV, fill=State)) + geom_histogram(binwidth = .003)
+bdat.imputed.IBU.clean %>% ggplot(aes(x=IBU.clean, fill=State)) + geom_histogram()
+```
+# 7. Summary statistics and Histogram for ABV
+```{r}
+bdat.imputed.IBU.clean %>% ggplot(aes(x=ABV, y=IBU.clean, colour=State)) + geom_point() + ggtitle("IBU vs ABV")
+bdat.imputed.IBU.clean %>% ggplot(aes(x=ABV, y=IBU.clean)) + geom_smooth() + ggtitle("IBU vs ABV")
+
+bdat.imputed.IBU.clean %>% ggplot(aes(x=ABV, y=log(IBU.clean), colour=State)) + geom_point()+ ggtitle("log(IBU) vs ABV")
+bdat.imputed.IBU.clean %>% ggplot(aes(x=ABV, y=log(IBU.clean))) + geom_smooth()+ ggtitle("log(IBU) vs ABV")
+
+bdat.imputed.IBU.clean %>% ggplot(aes(x=log(ABV), y=log(IBU.clean), colour=State)) + geom_point()+ ggtitle("log(IBU) vs log(ABV)")
+bdat.imputed.IBU.clean %>% ggplot(aes(x=log(ABV), y=log(IBU.clean))) + geom_smooth()+ ggtitle("log(IBU) vs log(ABV)")
+
+# Todo: remove outliers
+
+```
+#7 EDA continued
+```{r}
+#Linear-Linear
+linearlinear <- lm(IBU.clean~State + State*ABV + ABV, data=bdat.imputed.IBU.clean)
+plot(linearlinear)
+
+#Log-Linear
+fullySaturatedModel_loglinear <- lm(log(IBU.clean)~State + State*ABV + ABV, data=bdat.imputed.IBU.clean)
+plot(loglinear)
+
+#Log-Log
+loglog <- lm(log(IBU.clean)~State + State*log(ABV) + log(ABV), data=bdat.imputed.IBU.clean)
+plot(loglog)
+
+#Linear Linear is the winner winner? 
+```
