@@ -11,7 +11,16 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r load-packages, include=FALSE}
+# Introduction 
+## Restatment of problem
+stuff goes heree
+## Dataset
+stuff goes heree
+## Techniques used
+stuff goes heree
+
+# Libraries 
+```{r load-packages}
 library(tidyverse)
 library(magrittr)
 library(knitr)
@@ -20,16 +29,10 @@ library(DT)
 library(mice)
 library(VIM)
 library(psych)
+library(tidyverse)
+library (readr)
 ```
-```{r}
-## Including Plots
-# (Plot guide from initial R markdown example online)
-# You can also embed plots, for example:
-# ```{r pressure, echo=FALSE}
-# plot(pressure)
-# ```
-# Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
-```
+
 
 # Utility functions 
 ```{r}
@@ -42,8 +45,6 @@ isEmpty <- function(column) {
 
 # Import Data 
 ```{r message=FALSE, warning=FALSE}
-library(tidyverse)
-library (readr)
 
 beer_url="https://raw.githubusercontent.com/RiccoFerraro/dds_case_study_1/main/Beers.csv?token=AJ6R3O5PU6YT2DDEIUZTQ5DAHIFFU"
 brewery_url="https://raw.githubusercontent.com/RiccoFerraro/dds_case_study_1/main/Breweries.csv?token=AJ6R3O6A7SJRNWAGTPCHSWLAHIFFY"
@@ -209,7 +210,7 @@ bdat.imputed.IBU.clean %>% ggplot(aes(x=ABV, y=IBU.clean, colour=State)) + geom_
 bdat.imputed.IBU.clean %>% ggplot(aes(x=ABV, y=IBU.clean)) + geom_smooth() + ggtitle("IBU vs ABV")
 ```
 
-# 7b EDA continued
+# 7b. EDA continued
 TODO: Speak to Assumptions for Linear Regression, and P-value and confidence interval for ABV estimate, scope of inference
 ```{r}
 #Linear-Linear
