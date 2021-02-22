@@ -82,6 +82,8 @@ datatable(brewNum)
 
 print("Total Unique Breweries: ")
 sum(brewNum$unique_breweries)
+
+brewNum %>%  ggplot(aes(x=unique_breweries, y="",fill=State)) + geom_bar(stat = "identity", colour="black") + coord_polar("x", start=0) + ggtitle("Unique Breweries By state")
 ```
 
 # 3a. Plot missing data for reference
@@ -97,18 +99,17 @@ summary(bdat)
 
 
 # 3b. Assess missing data when no data exists for IBU OR ABV
--Special Release, The Crowler^tm, Can'd aid foundation are missing ABV/IBU/Style
--The rest can be imputed based on their Style
--Cedar creek - Special Release is ambiguous, missing ABV/IBU/Style and will be dropped as it does not solve the QOI. 
--Oskar Blues Brewery - The Crowler is not an actual beer but a type of can
--Oskar Blues Brewery - Can'd aid foundation is a relief effort that sends water so it does not fit in the dataset.
--Beer ID 2364, Royal Lager of Weston Brewing has no ABV/IBU
--Same for BID - 2322	Fort Pitt Brewing Company	Fort Pitt Ale
--Oskar Blues Brewery	Birth IPA, 1750
--710, no data
--MillKing It Productions	AXL Pale Ale, 273 - out of business no info
--1095 no data
--963 no data
+1. Special Release, The Crowler^tm, Can'd aid foundation are missing ABV/IBU/Style
+2. Cedar creek - Special Release is ambiguous, missing ABV/IBU/Style and will be dropped as it does not solve the QOI. 
+3. Oskar Blues Brewery - The Crowler is not an actual beer but a type of can
+4. Oskar Blues Brewery - Can'd aid foundation is a relief effort that sends water so it does not fit in the dataset.
+5. Beer ID 2364, Royal Lager of Weston Brewing has no ABV/IBU
+6. Same for BID - 2322	Fort Pitt Brewing Company	Fort Pitt Ale
+7. Oskar Blues Brewery	Birth IPA, 1750
+8. 710, no data
+9. MillKing It Productions	AXL Pale Ale, 273 - out of business no info
+10. 1095 no data
+11. 963 no data
 ```{r}
 # the following line removes these NA points
 bdat_clean <- bdat %>% filter(bdat$Beer_ID!=2210 & bdat$Beer_ID!=1796 & bdat$Beer_ID!=1790 & bdat$Beer_ID!=2364&
@@ -118,7 +119,7 @@ bdat$Beer_ID!=2322& bdat$Beer_ID!=1750& bdat$Beer_ID!=710& bdat$Beer_ID!=273& bd
 
 
 
-# 3c. Assess and impute missing data when by hand when data is availbe publicaly. 
+# 3c. Enter in missing data when by hand when data is availbe publicly 
 -Add style data for 2527 and 1635 by looking it up by hand. 
 -Add IBU and ABV Data for many missing rows by looking up by hand (online via `BeerAdvocate.com` or `Untappd.com`)
 ```{r}
@@ -144,11 +145,17 @@ bdat_with_hand_updates = merge(bdat_hand_updated,bdat_clean,by="Beer_ID",all.y =
 
 # 3d. Assess and impute missing IBU data with median IBU by style 
 ```{r}
+#Summary stats before imputation
+kable(summary(bdat_with_hand_updates))
+
 # Impute IBU
 bdat.IBU.Summary <- bdat_with_hand_updates %>% filter(!isEmpty(IBU)) %>% group_by(Style) %>% summarise(median_IBU_by_style=median(IBU))
 bdat.imputed.IBU <-merge(bdat_with_hand_updates, bdat.IBU.Summary, by="Style")  %>% mutate(IBU.clean = if_else(isEmpty(IBU), median_IBU_by_style, as.double(IBU)))
 bdat.imputed.IBU.clean = bdat.imputed.IBU[,-c(4)]
 bdat.imputed.IBU.clean %>% filter(isEmpty(Style))
+
+# Summary stats after imputation
+kable(summary(bdat.imputed.IBU.clean))
 ```
 
 
@@ -170,9 +177,9 @@ summary(bdat.imputed.IBU.clean)
 median.imputed.by.state <- bdat.imputed.IBU.clean  %>% 
   group_by(State) %>% summarize(median_abv=median(ABV), median_ibu=median(IBU.clean)) 
 
-median.imputed.by.state %>% ggplot(aes(y=median_abv, x=State, fill=State)) + geom_bar(stat="identity")
-datatable(brewNum)
+median.imputed.by.state %>% ggplot(aes(y=median_abv, x=State, fill=State)) + geom_bar(stat="identity")+ ggtitle("Median ABV by state")
 
+median.imputed.by.state %>% ggplot(aes(y=median_ibu, x=State, fill=State)) + geom_bar(stat="identity") + ggtitle("Median IBU by state")
 print("Total Unique Breweries: ")
 sum(brewNum$unique_breweries)
 ```
@@ -197,8 +204,7 @@ arrange(bdat.imputed.IBU.clean, desc(IBU.clean))[1,]
 
 # 6. Summary statistics and Histogram for ABV
 ```{r}
-summary(bdat.imputed.IBU.clean$ABV)
-describe(bdat.imputed.IBU.clean$ABV)
+kable(summary(bdat.imputed.IBU.clean))
 
 bdat.imputed.IBU.clean %>% ggplot(aes(x=ABV, fill=State)) + geom_histogram(binwidth = .003)
 bdat.imputed.IBU.clean %>% ggplot(aes(x=IBU.clean, fill=State)) + geom_histogram()
