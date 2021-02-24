@@ -1,6 +1,6 @@
 ---
 title: "brewsTest"
-author: "Kebur Fantahun"
+authors: "Kebur Fantahun", "Ricco Ferraro"
 date: "02/21/2021"
 output:
   html_document: default
