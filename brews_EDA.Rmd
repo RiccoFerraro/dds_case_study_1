@@ -31,6 +31,7 @@ library(VIM)
 library(psych)
 library(tidyverse)
 library (readr)
+library(caret)
 ```
 
 
@@ -46,8 +47,9 @@ isEmpty <- function(column) {
 # Import Data 
 ```{r message=FALSE, warning=FALSE}
 
-beer_url="https://raw.githubusercontent.com/RiccoFerraro/dds_case_study_1/main/Beers.csv?token=AJ6R3O5PU6YT2DDEIUZTQ5DAHIFFU"
-brewery_url="https://raw.githubusercontent.com/RiccoFerraro/dds_case_study_1/main/Breweries.csv?token=AJ6R3O6A7SJRNWAGTPCHSWLAHIFFY"
+# Todo update this to just use file in current directory (which should exist because it is commited to the same repository in source control)
+beer_url="https://raw.githubusercontent.com/RiccoFerraro/dds_case_study_1/main/Beers.csv?token=ADHK27V7NC2MST3MBWULDE3AJLWSC"
+brewery_url="https://raw.githubusercontent.com/RiccoFerraro/dds_case_study_1/main/Breweries.csv?token=ADHK27SX6GX255OHB7MNDVDAJLWVQ"
 
 beer <-read_csv(url(beer_url))
 brew <-read_csv(url(brewery_url))
@@ -224,3 +226,38 @@ linearlinear <- lm(IBU.clean~State + ABV, data=bdat.imputed.IBU.clean)
 plot(linearlinear)
 summary(linearlinear)
 ```
+
+Note: American Pale Ale is VERY similar to IPA but we call it "other" ale
+# 8a. Data Prep for Difference with respect to IBU and ABV between IPAs and other Ales
+```{r}
+summary(as.factor(bdat.imputed.IBU.clean$Style))
+bdat.IPA.Vs.Ales = bdat.imputed.IBU.clean %>% mutate(Style = if_else(str_detect(Style, "India Pale Ale|IPA"), "IPA", if_else(str_detect(Style, "Ale"),"OtherAle", Style))) %>% filter(Style == "IPA" | Style == "OtherAle") %>% mutate(Style = as.factor(Style))
+head(bdat.IPA.Vs.Ales)
+bdat.IPA.Vs.Ales %>% ggplot(aes(x=ABV, y=IBU.clean, colour= Style)) + geom_point()
+```
+# 8b. Test split
+```{r}
+set.seed(1234)
+splitPercKNN = .85
+trainIndicesKNN = sample(1:dim(bdat.IPA.Vs.Ales)[1],round(splitPercKNN * dim(bdat.IPA.Vs.Ales)[1]))
+bdat.IPA.Vs.Ales.train = bdat.IPA.Vs.Ales[trainIndicesKNN,]
+bdat.IPA.Vs.Ales.test = bdat.IPA.Vs.Ales[-trainIndicesKNN,]
+```
+
+# 8c. KNN for `IPA's` vs `Other Ales`
+```{r}
+trControl <- trainControl(method  = "cv",
+                          number  = 10)
+
+fit <- train(Style ~ IBU.clean + ABV,
+             method     = "knn",
+             tuneGrid   = expand.grid(k = 1:10),
+             trControl  = trControl,
+             metric     = "Accuracy",
+             data       = bdat.IPA.Vs.Ales.train)
+
+classifications <- predict(fit, bdat.IPA.Vs.Ales.test)
+CM = confusionMatrix(table(bdat.IPA.Vs.Ales.test$Style, classifications))
+CM
+```
+
