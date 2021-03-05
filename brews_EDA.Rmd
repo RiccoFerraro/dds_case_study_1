@@ -261,3 +261,13 @@ CM = confusionMatrix(table(bdat.IPA.Vs.Ales.test$Style, classifications))
 CM
 ```
 
+# 8d. Linear Regression for `IPA's` vs `Other Ales`
+
+Todo: make the unit increase in interpretation be in terms of .01 unit increase in ABV
+```{r}
+linearlinear <- lm(IBU.clean~Style +Style*ABV + ABV, data=bdat.IPA.Vs.Ales.train)
+plot(linearlinear)
+confint(linearlinear)
+summary(linearlinear)
+```
+
