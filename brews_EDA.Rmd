@@ -222,7 +222,8 @@ bdat.imputed.IBU.clean %>% ggplot(aes(x=ABV, y=IBU.clean)) + geom_smooth() + ggt
 TODO: Speak to Assumptions for Linear Regression, and P-value and confidence interval for ABV estimate, scope of inference
 ```{r}
 #Linear-Linear
-linearlinear <- lm(IBU.clean~State + ABV, data=bdat.imputed.IBU.clean)
+linearlinear <- lm(IBU.clean~State + State*ABV + ABV, data=bdat.imputed.IBU.clean)
+bdat.imputed.IBU.clean
 plot(linearlinear)
 summary(linearlinear)
 ```
@@ -234,6 +235,8 @@ summary(as.factor(bdat.imputed.IBU.clean$Style))
 bdat.IPA.Vs.Ales = bdat.imputed.IBU.clean %>% mutate(Style = if_else(str_detect(Style, "India Pale Ale|IPA"), "IPA", if_else(str_detect(Style, "Ale"),"OtherAle", Style))) %>% filter(Style == "IPA" | Style == "OtherAle") %>% mutate(Style = as.factor(Style))
 head(bdat.IPA.Vs.Ales)
 bdat.IPA.Vs.Ales %>% ggplot(aes(x=ABV, y=IBU.clean, colour= Style)) + geom_point()
+
+summary(bdat.imputed.IBU.clean$Style)
 ```
 # 8b. Test split
 ```{r}
@@ -265,9 +268,26 @@ CM
 
 Todo: make the unit increase in interpretation be in terms of .01 unit increase in ABV
 ```{r}
-linearlinear <- lm(IBU.clean~Style +Style*ABV + ABV, data=bdat.IPA.Vs.Ales.train)
+linearlinear <- lm(IBU.clean~Style +Style*ABV + ABV, data=ç)
 plot(linearlinear)
 confint(linearlinear)
 summary(linearlinear)
 ```
+
+9 LDA to predict state based on IBU and ABV
+```{r}
+lda.fit = train(State ~ IBU.clean + ABV, data=bdat.IPA.Vs.Ales.train, method="lda",
+                trControl = trainControl(method = "cv"),
+                             metric     = "Accuracy")
+lda.fit
+
+knn.fit <- train(State ~ IBU.clean + ABV,
+             method     = "knn",
+             tuneGrid   = expand.grid(k = 1:10),
+             trControl  = trControl,
+             metric     = "Accuracy",
+             data       = bdat.IPA.Vs.Ales.train)
+knn.fit
+```
+
 
