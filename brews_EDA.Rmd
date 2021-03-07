@@ -267,8 +267,7 @@ CM
 ```
 
 # 8d. Linear Regression for `IPA's` vs `Other Ales`
-
-Todo: make the unit increase in interpretation be in terms of .01 unit increase in ABV
+- NOTE: make the unit increase in interpretation be in terms of .01 unit increase in ABV
 ```{r}
 linearlinear <- lm(IBU.clean~Style +Style*ABV + ABV, data=bdat.IPA.Vs.Ales.train)
 plot(linearlinear)
@@ -276,13 +275,11 @@ confint(linearlinear)
 summary(linearlinear)
 ```
 
-# 8.e LDA and KNN to predict style based on IBU and ABV
+# 8.e LDA and KNN to predict style based on IBU and ABV Individually
 ```{r}
-bdat.IPA.Vs.Ales.train
 lda.fit.IBU = train(Style ~ IBU.clean, data=bdat.IPA.Vs.Ales.train, method="lda",
                 trControl = trainControl(method = "cv"),
                              metric     = "Accuracy")
-lda.fit.IBU
 
 knn.fit.IBU <- train(Style ~ IBU.clean,
              method     = "knn",
@@ -290,12 +287,10 @@ knn.fit.IBU <- train(Style ~ IBU.clean,
              trControl  = trControl,
              metric     = "Accuracy",
              data       = bdat.IPA.Vs.Ales.train)
-knn.fit.IBU
 
 lda.fit.ABV = train(Style ~ ABV, data=bdat.IPA.Vs.Ales.train, method="lda",
                 trControl = trainControl(method = "cv"),
                              metric     = "Accuracy")
-lda.fit.ABV
 
 knn.fit.ABV <- train(Style ~ ABV,
              method     = "knn",
@@ -303,30 +298,33 @@ knn.fit.ABV <- train(Style ~ ABV,
              trControl  = trControl,
              metric     = "Accuracy",
              data       = bdat.IPA.Vs.Ales.train)
-knn.fit.ABV
 
 ```
 
-# 9.a 
+# 9
 ```{r}
 bdat.IPA.Vs.Ales.train.Extra = data.frame(bdat.IPA.Vs.Ales.train, stringsAsFactors=TRUE)
+bdat.IPA.Vs.Ales.test.Extra = data.frame(bdat.IPA.Vs.Ales.test, stringsAsFactors=TRUE)
 bdat.IPA.Vs.Ales.train.Extra$Ounces = as.factor(bdat.IPA.Vs.Ales.train.Extra$Ounces)
+bdat.IPA.Vs.Ales.test.Extra$Ounces = as.factor(bdat.IPA.Vs.Ales.test.Extra$Ounces)
 bdat.IPA.Vs.Ales.train.Extra.filtered <- bdat.IPA.Vs.Ales.train.Extra  %>% filter(Ounces=="12" | Ounces=="16") %>% mutate(Ounces=as.factor(as.double(as.character(Ounces))))
+bdat.IPA.Vs.Ales.test.Extra.filtered <-  bdat.IPA.Vs.Ales.test.Extra  %>% filter(Ounces=="12" | Ounces=="16") %>% mutate(Ounces=as.factor(as.double(as.character(Ounces))))
 
-knn.fit.IBU <- train(Ounces ~ State,
+knn.fit.OuncesByState <- train(Ounces ~ State,
              method     = "knn",
              preProcess = c("center", "scale"),
              tuneGrid   = expand.grid(k = 1:10),
              trControl  = trControl,
              metric     = "Accuracy",
              data       = bdat.IPA.Vs.Ales.train.Extra.filtered)
-knn.fit.IBU
 
-print("use KNN!")
-as.double(levels(bdat.IPA.Vs.Ales.train.Extra$Ounces))
+
 #bdat.IPA.Vs.Ales.train.Extra.filtered %>% ggplot(aes(y = IBU.clean, x=as.double(as.character(bdat.IPA.Vs.Ales.train.Extra$Ounces)))) +  geom_smooth(method=lm)
 bdat.IPA.Vs.Ales.train.Extra.filtered %>% ggplot(aes(x=Ounces, fill=State)) + geom_bar() + facet_wrap(~State) + ggtitle("Count of 12 and 16 Ounces by State")
 
+classifications <- predict(knn.fit.OuncesByState, bdat.IPA.Vs.Ales.test.Extra.filtered)
+CM = confusionMatrix(table(bdat.IPA.Vs.Ales.test.Extra.filtered$Ounces, classifications))
+CM
 ```
 
 
