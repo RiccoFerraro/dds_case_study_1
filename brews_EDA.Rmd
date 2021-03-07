@@ -268,26 +268,74 @@ CM
 
 Todo: make the unit increase in interpretation be in terms of .01 unit increase in ABV
 ```{r}
-linearlinear <- lm(IBU.clean~Style +Style*ABV + ABV, data=ç)
+linearlinear <- lm(IBU.clean~Style +Style*ABV + ABV, data=bdat.IPA.Vs.Ales.train)
 plot(linearlinear)
 confint(linearlinear)
 summary(linearlinear)
 ```
 
-9 LDA to predict state based on IBU and ABV
+# 8.e LDA and KNN to predict style based on IBU and ABV
 ```{r}
-lda.fit = train(State ~ IBU.clean + ABV, data=bdat.IPA.Vs.Ales.train, method="lda",
+bdat.IPA.Vs.Ales.train
+lda.fit.IBU = train(Style ~ IBU.clean, data=bdat.IPA.Vs.Ales.train, method="lda",
                 trControl = trainControl(method = "cv"),
                              metric     = "Accuracy")
-lda.fit
+lda.fit.IBU
 
-knn.fit <- train(State ~ IBU.clean + ABV,
+knn.fit.IBU <- train(Style ~ IBU.clean,
              method     = "knn",
              tuneGrid   = expand.grid(k = 1:10),
              trControl  = trControl,
              metric     = "Accuracy",
              data       = bdat.IPA.Vs.Ales.train)
-knn.fit
+knn.fit.IBU
+
+lda.fit.ABV = train(Style ~ ABV, data=bdat.IPA.Vs.Ales.train, method="lda",
+                trControl = trainControl(method = "cv"),
+                             metric     = "Accuracy")
+lda.fit.ABV
+
+knn.fit.ABV <- train(Style ~ ABV,
+             method     = "knn",
+             tuneGrid   = expand.grid(k = 1:10),
+             trControl  = trControl,
+             metric     = "Accuracy",
+             data       = bdat.IPA.Vs.Ales.train)
+knn.fit.ABV
+
+```
+
+# 9.a
+```{r}
+bdat.IPA.Vs.Ales.train.Extra = data.frame(bdat.IPA.Vs.Ales.train, stringsAsFactors=TRUE)
+bdat.IPA.Vs.Ales.train.Extra$Ounces = as.factor(bdat.IPA.Vs.Ales.train.Extra$Ounces)
+
+lda.fit.IBU = train(Ounces ~ IBU.clean, data=bdat.IPA.Vs.Ales.train.Extra, method="qda",
+                trControl = trainControl(method = "cv"),
+                             metric     = "Accuracy")
+lda.fit.IBU
+
+knn.fit.IBU <- train(Style ~ IBU.clean,
+             method     = "knn",
+             tuneGrid   = expand.grid(k = 1:10),
+             trControl  = trControl,
+             metric     = "Accuracy",
+             data       = bdat.IPA.Vs.Ales.train.Extra)
+knn.fit.IBU
+
+print("use LDA!")
+# todo: address assumptions for LDA
+#Add a chart (states vs IPA count? or something like that)
+```
+
+# 9.b Linear Regression for Ounces vs 
+
+Todo: make the unit increase in interpretation be in terms of .01 unit increase in ABV
+```{r}
+linearlinear <- lm(IBU.clean~Style +Style*ABV + ABV, data=ç)
+plot(linearlinear)
+confint(linearlinear)
+summary(linearlinear)
 ```
 
 
