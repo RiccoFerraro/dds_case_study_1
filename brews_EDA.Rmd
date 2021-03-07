@@ -13,11 +13,11 @@ knitr::opts_chunk$set(error = FALSE)
 
 # Introduction 
 ## Restatment of problem
-stuff goes here
+
 ## Dataset
-stuff goes here
+
 ## Techniques used
-stuff goes here
+
 
 # Libraries 
 ```{r load-packages}
@@ -71,6 +71,8 @@ kable(tail(bdat))
 
 ```
 
+# Conclusion
+
 
 # 1. How many breweries are in each state?
 See Table:
@@ -94,7 +96,7 @@ brewNum %>%  ggplot(aes(x=unique_breweries, y="",fill=State)) + geom_bar(stat = 
 bdat_mice_clean <- aggr(bdat, col=c('navyblue','yellow'),
                     numbers=TRUE, sortVars=TRUE,
                     labels=names(bdat), cex.axis=.7,
-                    gap=3, ylab=c("Missing data","Pattern"))
+                    gap=3, ylab=c("Missing Data (distribution)","Missing Data (Pattern)"))
 summary(bdat)
 ```
 
@@ -164,11 +166,11 @@ kable(summary(bdat.imputed.IBU.clean))
 
 # 3e. Plot missing data to show it has all been resolved. 
 ```{r}
-# Plot missing data (there should be none)
-bdat_mice_clean <- aggr(bdat.imputed.IBU.clean, col=c('navyblue','yellow'),
+# Plot missing data (there should be none)'
+aggr(bdat.imputed.IBU.clean, col=c('navyblue','yellow'),
                     numbers=TRUE, sortVars=TRUE,
                     labels=names(bdat.imputed.IBU.clean), cex.axis=.7,
-                    gap=3, ylab=c("Missing data","Pattern"))
+                    gap=3, ylab=c("Missing Data (distribution)","Missing Data (Pattern)")) 
 summary(bdat.imputed.IBU.clean)
 ```
 
@@ -208,14 +210,14 @@ arrange(bdat.imputed.IBU.clean, desc(IBU.clean))[1,]
 ```{r}
 kable(summary(bdat.imputed.IBU.clean))
 
-bdat.imputed.IBU.clean %>% ggplot(aes(x=ABV, fill=State)) + geom_histogram(binwidth = .003)
-bdat.imputed.IBU.clean %>% ggplot(aes(x=IBU.clean, fill=State)) + geom_histogram()
+bdat.imputed.IBU.clean %>% ggplot(aes(x=ABV, fill=State)) + geom_histogram(binwidth = .003)  + ggtitle("Distribution of ABV by State")
+bdat.imputed.IBU.clean %>% ggplot(aes(x=IBU.clean, fill=State)) + geom_histogram()  + ggtitle("Distribution of IBU by State")
 ```
 
 # 7a. Summary statistics and Histogram for ABV
 ```{r}
 bdat.imputed.IBU.clean %>% ggplot(aes(x=ABV, y=IBU.clean, colour=State)) + geom_point() + ggtitle("IBU vs ABV")
-bdat.imputed.IBU.clean %>% ggplot(aes(x=ABV, y=IBU.clean)) + geom_smooth() + ggtitle("IBU vs ABV")
+bdat.imputed.IBU.clean %>% ggplot(aes(x=ABV, y=IBU.clean)) + geom_point() + geom_smooth(method="lm") + ggtitle("IBU vs ABV")
 ```
 
 # 7b. EDA continued
@@ -233,13 +235,17 @@ To investigate the difference between `IBU` and `ABV` for `IPA's vs OtherAles` w
 
 ## Data Prep and Visualization 
 1. Filter out all data that is not an `Ale`. Then bucket anything with `IPA` or `India Pale Ale` as `IPA` and all other beers with the word `Ale` in their style as `OtherAle`.  
-2. Then plot IBU and ABV for `IPA's` and `otherAles` for IPA's and OtherALes
+2. Plot distributions for ABV for `IPA's` and `otherAles`
+3. Then plot IBU and ABV for `IPA's` and `otherAles` for IPA's and OtherALes
+
 **Note: American Pale Ale is VERY similar to IPA but we call it "other" ale**
 ```{r}
 summary(as.factor(bdat.imputed.IBU.clean$Style))
 bdat.IPA.Vs.Ales = bdat.imputed.IBU.clean %>% mutate(Style = if_else(str_detect(Style, "India Pale Ale|IPA"), "IPA", if_else(str_detect(Style, "Ale"),"OtherAle", Style))) %>% filter(Style == "IPA" | Style == "OtherAle") %>% mutate(Style = as.factor(Style))
 head(bdat.IPA.Vs.Ales)
-bdat.IPA.Vs.Ales %>% ggplot(aes(x=ABV, y=IBU.clean, colour= Style)) + geom_point()
+
+bdat.IPA.Vs.Ales %>% ggplot(aes(x=ABV, fill= Style)) + geom_histogram() + ggtitle("IBU vs ABV for IPA's and OtherAles")
+bdat.IPA.Vs.Ales %>% ggplot(aes(x=ABV, y=IBU.clean, colour= Style)) + geom_point() + geom_smooth(method="lm") + ggtitle("Histogram of IPA vs OtherAle for ABV")
 
 summary(bdat.imputed.IBU.clean$Style)
 ```
@@ -309,9 +315,10 @@ knn.fit.ABV <- train(Style ~ ABV,
              data       = bdat.IPA.Vs.Ales.train)
 
 ```
-
 ## Conclusion: 
+It is clear that there is a significant relationship between IBU and ABV and that the relationship varies for `IPA's` and for `other Ales`. We were able to predict the style of Ale (either IPA or other Ales) with an average Accuracy of 90% (P-value < 2e-16). Further, we can be 95% confident that the true accuracy for our model is between [0.8537, 0.9355]. On average, holding all other variables constant, we predict that when an ale is an IPA, it has a 2.373 increase in IBU per .01 increase in relative ABV, when compared to Other Ales. That is to say, IPA's generally have a higher bitterness for a given ABV than other ales and the ratio of IBU to ABV is generally higher for IPA's. We are 95% confident that this 'IPA' effect is between [1.01203617 3.73372852] per .01 increase in ABV. This 'IPA' effect applies to all craft beers sampled in the study, as well as all craft beers in the USA for which the beers sampled int the study are a good representation. Reasons for this 'IPA' effect could be simply that IPA's, on average, use a higher ratio of hops in the brewing process and will generally have higher bitterness for the same ABV when compared to other Ales. 
 
+That said, it can be noted that IPA's generally have a higher ABV (IBU not fixed). The skew of IPA's toward higher ABV could also be due to the fact beer drinkers generally drink fewer IPA's and are willing to spend more money on them. As such, to achieve the same 'buzz' the discerning IPA drinker will gravitate towards higher IBU AND Higher ABV. 
 
 # 9.  We will knock your socks off! 
 To show that there is a relationship between State and Ounces for all Ales, specifically  12 vs 16 ounces, we perform a brief analysis of Ounces vs. State. What we are interested in here is whether or not a State like California or Michigan  differ in their preference for 12 vs 16 ounce beers. 
@@ -354,3 +361,13 @@ CM
 
 ## Conclusion: 
 There is a significant relationship between `Ounces` and `State` for Ales that are either 12 vs 16 ounces. We were able to predict ounces by state (for ales) with an accuracy of 71.4% which is significantly better than random chance (50% accuracy). This suggests that when considering what size a beer should be sold in, it could be important to consider what state that beer is going to be brewed in. This helps align sales with the laws and preferences of that state. For example, Indiana has a high prevalence of 16 ounce ales, whereas Colorado or Texas both lean towards 12 ounce ales. It would be preferable to brew and sell 16 ounce beers in states like Indiana (or other states that have more 16 ounce ales) and 12 ounce beers in Colorado (or other states that have more 12 ounce ales). The reason for this association may be due to a variety of reasons including income, weather, local diet, and social norms for beer drinkers.
+
+#Conclusion
+There are several note-worthy relationships between in our craft beer dataset. For example, median IBU as well as median ABV per state vary by state for craft beers vary. When targeting sales of particular states' craft beer, it would be wise to consider the median IBU and median ABV for the current craft beers in that state. 
+
+Further, it is clear that there is a significant relationship between IBU and ABV and that the relationship varies for `IPA's` and for `other Ales`. We were able to predict the style of Ale (either IPA or other Ales) with an average Accuracy of 90% (P-value < 2e-16). Further, we can be 95% confident that the true accuracy for our model is between [0.8537, 0.9355]. On average, holding all other variables constant, we predict that when an ale is an IPA, it has a 2.373 increase in IBU per .01 increase in relative ABV, when compared to Other Ales. That is to say, IPA's generally have a higher bitterness for a given ABV than other ales and the ratio of IBU to ABV is generally higher for IPA's. We are 95% confident that this 'IPA' effect is between [1.01203617 3.73372852] per .01 increase in ABV. This 'IPA' effect applies to all craft beers sampled in the study, as well as all craft beers in the USA for which the beers sampled int the study are a good representation. Reasons for this 'IPA' effect could be simply that IPA's, on average, use a higher ratio of hops in the brewing process and will generally have higher bitterness for the same ABV when compared to other Ales. 
+
+That said, it can be noted that IPA's generally have a higher ABV (IBU not fixed). The skew of IPA's toward higher ABV could also be due to the fact beer drinkers generally drink fewer IPA's and are willing to spend more money on them. As such, to achieve the same 'buzz' the discerning IPA drinker will gravitate towards higher IBU AND Higher ABV. 
+
+There is also a significant relationship between `Ounces` and `State` for Ales that are either 12 vs 16 ounces. We were able to predict ounces by state (for ales) with an accuracy of 71.4% which is significantly better than random chance (50% accuracy). This suggests that when considering what size a beer should be sold in, it could be important to consider what state that beer is going to be brewed in. This helps align sales with the laws and preferences of that state. For example, Indiana has a high prevalence of 16 ounce ales, whereas Colorado or Texas both lean towards 12 ounce ales. It would be preferable to brew and sell 16 ounce beers in states like Indiana (or other states that have more 16 ounce ales) and 12 ounce beers in Colorado (or other states that have more 12 ounce ales). The reason for this association may be due to a variety of reasons including income, weather, local diet, and social norms for beer drinkers.
+
