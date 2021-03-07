@@ -1,23 +1,23 @@
 ---
 title: "brewsTest"
-authors: "Kebur Fantahun", "Ricco Ferraro"
+author: "Kebur Fantahun, Ricco Ferraro" 
 date: "02/21/2021"
-output:
-  html_document: default
-  pdf_document: default
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_knit$set(root.dir= normalizePath('..'))
+knitr::opts_chunk$set(error = FALSE)
 ```
 
 # Introduction 
 ## Restatment of problem
-stuff goes heree
+stuff goes here
 ## Dataset
-stuff goes heree
+stuff goes here
 ## Techniques used
-stuff goes heree
+stuff goes here
 
 # Libraries 
 ```{r load-packages}
@@ -223,7 +223,6 @@ TODO: Speak to Assumptions for Linear Regression, and P-value and confidence int
 ```{r}
 #Linear-Linear
 linearlinear <- lm(IBU.clean~State + State*ABV + ABV, data=bdat.imputed.IBU.clean)
-bdat.imputed.IBU.clean
 plot(linearlinear)
 summary(linearlinear)
 ```
