@@ -227,8 +227,14 @@ plot(linearlinear)
 summary(linearlinear)
 ```
 
-Note: American Pale Ale is VERY similar to IPA but we call it "other" ale
-# 8a. Data Prep for Difference with respect to IBU and ABV between IPAs and other Ales
+
+# 8. Difference with respect to IBU and ABV between IPAs and other Ales
+To investigate the difference between `IBU` and `ABV` for `IPA's vs OtherAles` we first perform some nominal data cleanup and visualize IBU vs ABV for `IPA's vs otherAles`. We then use KNN to classify style, either `IPA` or `otherAle`, to highlight that there is a significant difference between the relationship of IBU and ABV for `IPA's` and `otherAles`
+
+## Data Prep and Visualization 
+1. Filter out all data that is not an `Ale`. Then bucket anything with `IPA` or `India Pale Ale` as `IPA` and all other beers with the word `Ale` in their style as `OtherAle`.  
+2. Then plot IBU and ABV for `IPA's` and `otherAles` for IPA's and OtherALes
+**Note: American Pale Ale is VERY similar to IPA but we call it "other" ale**
 ```{r}
 summary(as.factor(bdat.imputed.IBU.clean$Style))
 bdat.IPA.Vs.Ales = bdat.imputed.IBU.clean %>% mutate(Style = if_else(str_detect(Style, "India Pale Ale|IPA"), "IPA", if_else(str_detect(Style, "Ale"),"OtherAle", Style))) %>% filter(Style == "IPA" | Style == "OtherAle") %>% mutate(Style = as.factor(Style))
@@ -237,7 +243,8 @@ bdat.IPA.Vs.Ales %>% ggplot(aes(x=ABV, y=IBU.clean, colour= Style)) + geom_point
 
 summary(bdat.imputed.IBU.clean$Style)
 ```
-# 8b. Test split
+## Test split
+Split the data into 85% train and 15% test. Only train our algorithms on training data with crossvalidation. Use test split only for accuracy and prediction metric calculation. 
 ```{r}
 set.seed(1234)
 splitPercKNN = .85
@@ -246,7 +253,7 @@ bdat.IPA.Vs.Ales.train = bdat.IPA.Vs.Ales[trainIndicesKNN,]
 bdat.IPA.Vs.Ales.test = bdat.IPA.Vs.Ales[-trainIndicesKNN,]
 ```
 
-# 8c. KNN for `IPA's` vs `Other Ales`
+## KNN for `IPA's` vs `Other Ales`
 ```{r}
 trControl <- trainControl(method  = "cv",
                           number  = 10)
@@ -266,7 +273,8 @@ CM = confusionMatrix(table(bdat.IPA.Vs.Ales.test$Style, classifications))
 CM
 ```
 
-# 8d. Linear Regression for `IPA's` vs `Other Ales`
+## OLS Multiple Linear Regression for `IPA's` vs `Other Ales`
+Use least squared multiple linear regression to highlight specific relationships between IBU and ABV for style IPA and style otherAle. 
 - NOTE: make the unit increase in interpretation be in terms of .01 unit increase in ABV
 ```{r}
 linearlinear <- lm(IBU.clean~Style +Style*ABV + ABV, data=bdat.IPA.Vs.Ales.train)
@@ -275,7 +283,8 @@ confint(linearlinear)
 summary(linearlinear)
 ```
 
-# 8.e LDA and KNN to predict style based on IBU and ABV Individually
+## LDA and KNN to predict style based on IBU and ABV Individually
+Here we use LDA and KNN to assess the relationship between IBU and Style as well as ABV and style. 
 ```{r}
 lda.fit.IBU = train(Style ~ IBU.clean, data=bdat.IPA.Vs.Ales.train, method="lda",
                 trControl = trainControl(method = "cv"),
@@ -301,7 +310,15 @@ knn.fit.ABV <- train(Style ~ ABV,
 
 ```
 
-# 9
+## Conclusion: 
+
+
+# 9.  We will knock your socks off! 
+To show that there is a relationship between State and Ounces for all Ales, specifically  12 vs 16 ounces, we perform a brief analysis of Ounces vs. State. What we are interested in here is whether or not a State like California or Michigan  differ in their preference for 12 vs 16 ounce beers. 
+
+## Data Cleanup and Visualization 
+1. Filter out all ales that are not either `12` or `16` ounces in volume. 
+2. We plot the ratios of `12` vs `16` ounce Ales for each state.  
 ```{r}
 bdat.IPA.Vs.Ales.train.Extra = data.frame(bdat.IPA.Vs.Ales.train, stringsAsFactors=TRUE)
 bdat.IPA.Vs.Ales.test.Extra = data.frame(bdat.IPA.Vs.Ales.test, stringsAsFactors=TRUE)
@@ -310,6 +327,16 @@ bdat.IPA.Vs.Ales.test.Extra$Ounces = as.factor(bdat.IPA.Vs.Ales.test.Extra$Ounce
 bdat.IPA.Vs.Ales.train.Extra.filtered <- bdat.IPA.Vs.Ales.train.Extra  %>% filter(Ounces=="12" | Ounces=="16") %>% mutate(Ounces=as.factor(as.double(as.character(Ounces))))
 bdat.IPA.Vs.Ales.test.Extra.filtered <-  bdat.IPA.Vs.Ales.test.Extra  %>% filter(Ounces=="12" | Ounces=="16") %>% mutate(Ounces=as.factor(as.double(as.character(Ounces))))
 
+#bdat.IPA.Vs.Ales.train.Extra.filtered %>% ggplot(aes(y = IBU.clean, x=as.double(as.character(bdat.IPA.Vs.Ales.train.Extra$Ounces)))) +  geom_smooth(method=lm)
+bdat.IPA.Vs.Ales.train.Extra.filtered %>% ggplot(aes(x=Ounces, fill=State)) + geom_bar() + facet_wrap(~State) + ggtitle("Count of 12 and 16 Ounce ales by State")
+```
+
+## Analysis: KNN & confusion matrix
+1. We use KNN with the optimal cross validated value of K (usually k=8) to predict Ounces (12 or 16) by state. 
+2. Generate a confusion matrix via test data to assess the performance of the prediction
+3. Accuracy ends up being around 0.7137 which is roughly 21% better than the existing random chance that we would have for predicting either 12 or 16 ounces. 
+```{r}
+set.seed(1234)
 knn.fit.OuncesByState <- train(Ounces ~ State,
              method     = "knn",
              preProcess = c("center", "scale"),
@@ -318,15 +345,12 @@ knn.fit.OuncesByState <- train(Ounces ~ State,
              metric     = "Accuracy",
              data       = bdat.IPA.Vs.Ales.train.Extra.filtered)
 
-
-#bdat.IPA.Vs.Ales.train.Extra.filtered %>% ggplot(aes(y = IBU.clean, x=as.double(as.character(bdat.IPA.Vs.Ales.train.Extra$Ounces)))) +  geom_smooth(method=lm)
-bdat.IPA.Vs.Ales.train.Extra.filtered %>% ggplot(aes(x=Ounces, fill=State)) + geom_bar() + facet_wrap(~State) + ggtitle("Count of 12 and 16 Ounces by State")
+knn.fit.OuncesByABV
 
 classifications <- predict(knn.fit.OuncesByState, bdat.IPA.Vs.Ales.test.Extra.filtered)
 CM = confusionMatrix(table(bdat.IPA.Vs.Ales.test.Extra.filtered$Ounces, classifications))
 CM
 ```
 
-
-
-
+## Conclusion: 
+There is a significant relationship between `Ounces` and `State` for Ales that are either 12 vs 16 ounces. We were able to predict ounces by state (for ales) with an accuracy of 71.4% which is significantly better than random chance (50% accuracy). This suggests that when considering what size a beer should be sold in, it could be important to consider what state that beer is going to be brewed in. This helps align sales with the laws and preferences of that state. For example, Indiana has a high prevalence of 16 ounce ales, whereas Colorado or Texas both lean towards 12 ounce ales. It would be preferable to brew and sell 16 ounce beers in states like Indiana (or other states that have more 16 ounce ales) and 12 ounce beers in Colorado (or other states that have more 12 ounce ales). The reason for this association may be due to a variety of reasons including income, weather, local diet, and social norms for beer drinkers.
