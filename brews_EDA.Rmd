@@ -252,14 +252,17 @@ bdat.IPA.Vs.Ales.test = bdat.IPA.Vs.Ales[-trainIndicesKNN,]
 trControl <- trainControl(method  = "cv",
                           number  = 10)
 
-fit <- train(Style ~ IBU.clean + ABV,
+fit.bothScaled <- train(Style ~ IBU.clean + ABV,
              method     = "knn",
+             preProcess = c("center", "scale"),
              tuneGrid   = expand.grid(k = 1:10),
              trControl  = trControl,
              metric     = "Accuracy",
              data       = bdat.IPA.Vs.Ales.train)
 
-classifications <- predict(fit, bdat.IPA.Vs.Ales.test)
+# fit.Both appears to perform the best as far as accuracy goes. 
+
+classifications <- predict(fit.bothScaled, bdat.IPA.Vs.Ales.test)
 CM = confusionMatrix(table(bdat.IPA.Vs.Ales.test$Style, classifications))
 CM
 ```
@@ -305,37 +308,28 @@ knn.fit.ABV
 
 ```
 
-# 9.a
+# 9.a 
 ```{r}
 bdat.IPA.Vs.Ales.train.Extra = data.frame(bdat.IPA.Vs.Ales.train, stringsAsFactors=TRUE)
 bdat.IPA.Vs.Ales.train.Extra$Ounces = as.factor(bdat.IPA.Vs.Ales.train.Extra$Ounces)
+bdat.IPA.Vs.Ales.train.Extra.filtered <- bdat.IPA.Vs.Ales.train.Extra  %>% filter(Ounces=="12" | Ounces=="16") %>% mutate(Ounces=as.factor(as.double(as.character(Ounces))))
 
-lda.fit.IBU = train(Ounces ~ IBU.clean, data=bdat.IPA.Vs.Ales.train.Extra, method="qda",
-                trControl = trainControl(method = "cv"),
-                             metric     = "Accuracy")
-lda.fit.IBU
-
-knn.fit.IBU <- train(Style ~ IBU.clean,
+knn.fit.IBU <- train(Ounces ~ State,
              method     = "knn",
+             preProcess = c("center", "scale"),
              tuneGrid   = expand.grid(k = 1:10),
              trControl  = trControl,
              metric     = "Accuracy",
-             data       = bdat.IPA.Vs.Ales.train.Extra)
+             data       = bdat.IPA.Vs.Ales.train.Extra.filtered)
 knn.fit.IBU
 
-print("use LDA!")
-# todo: address assumptions for LDA
-#Add a chart (states vs IPA count? or something like that)
+print("use KNN!")
+as.double(levels(bdat.IPA.Vs.Ales.train.Extra$Ounces))
+#bdat.IPA.Vs.Ales.train.Extra.filtered %>% ggplot(aes(y = IBU.clean, x=as.double(as.character(bdat.IPA.Vs.Ales.train.Extra$Ounces)))) +  geom_smooth(method=lm)
+bdat.IPA.Vs.Ales.train.Extra.filtered %>% ggplot(aes(x=Ounces, fill=State)) + geom_bar() + facet_wrap(~State) + ggtitle("Count of 12 and 16 Ounces by State")
+
 ```
 
-# 9.b Linear Regression for Ounces vs 
 
-Todo: make the unit increase in interpretation be in terms of .01 unit increase in ABV
-```{r}
-linearlinear <- lm(IBU.clean~Style +Style*ABV + ABV, data=ç)
-plot(linearlinear)
-confint(linearlinear)
-summary(linearlinear)
-```
 
 
