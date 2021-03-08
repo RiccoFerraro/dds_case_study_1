@@ -1,13 +1,8 @@
-README.md
-MSDS 6306: Doing Data Science - Case Study 01
-***
-
-# Group Members
-***
+# Beers & Breweries 
 * Kebur Fantahun
 * Ricco Ferraro
 
-# Introduction 
+## Introduction 
 
 ## Restatement of problem
 With the beer data given by Budweiser, this report will depict the apparent relationship between alcohol by volume(ABV) and international bitterness units(IBU) for a myriad of beers across the United States. The report also provides summary statistics such as minimums, medians and maximums with respect to ABV and IBU, as well as a deeper look in to the difference between IPA's and "Other Ale's"(any beer with Ale in the name) with respect to ABV and IBU. The research group reveals information that could be useful to Budweiser concerning the ounces of beers as they relate to each state of the US.
@@ -47,4 +42,4 @@ Breweries.csv list of 558 breweries within the United States and their attribute
 ![image](https://user-images.githubusercontent.com/13544830/110293890-fdd62a00-7fa3-11eb-8305-94bd48167a3a.png)
 5. Run All chunks in R-Studio. 
 
-
+Ricco Ferraro's YouTube Presentation: https://youtu.be/EhFG4kSpRKM
