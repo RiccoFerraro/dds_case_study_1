@@ -231,6 +231,7 @@ arrange(bdat.imputed.IBU.clean, desc(IBU.clean))[1,]
 As can be seen IBU is right skewed. The distribution per state seems fairly similar.  Most of the beer is located around the lower IBU which could indicate that more bitter beer is less popular and thus sold less.
 Similarly the distribution of ABV is right skewed as we would expect for values that can only be positive.  It seems that most popular beers will have around 5% ABV so that is the peak we see in the middle. 
 Minimum ABV is 0.027, the maximum ABV is 0.128. The minimum being 2.7 suggests no non-alcoholic beer is present in our dataset and that the lowest ABV is similar to a Raddler or a VERY weak session ale. The highest ABV is consistent with Barley wines, Imperial Stouts, or other High gravity beers. The inter-quartile range for the mean 50% of beers ranges from .050 to .0670 suggesting most craft beers have a fairly predictable ABV. 
+
 ```{r}
 kable(summary(bdat.imputed.IBU.clean))
 
@@ -273,8 +274,8 @@ summary(as.factor(bdat.imputed.IBU.clean$Style))
 bdat.IPA.Vs.Ales = bdat.imputed.IBU.clean %>% mutate(Style = if_else(str_detect(Style, "India Pale Ale|IPA"), "IPA", if_else(str_detect(Style, "Ale"),"OtherAle", Style))) %>% filter(Style == "IPA" | Style == "OtherAle") %>% mutate(Style = as.factor(Style))
 head(bdat.IPA.Vs.Ales)
 
-bdat.IPA.Vs.Ales %>% ggplot(aes(x=ABV, fill= Style)) + geom_histogram() + ggtitle("IBU vs ABV for IPA's and OtherAles")
-bdat.IPA.Vs.Ales %>% ggplot(aes(x=ABV, y=IBU.clean, colour= Style)) + geom_point() + geom_smooth(method="lm") + ggtitle("Histogram of IPA vs OtherAle for ABV")
+bdat.IPA.Vs.Ales %>% ggplot(aes(x=ABV, fill= Style)) + geom_histogram() + ggtitle("Histogram of IPA vs OtherAle for ABV")
+bdat.IPA.Vs.Ales %>% ggplot(aes(x=ABV, y=IBU.clean, colour= Style)) + geom_point() + geom_smooth(method="lm") + ggtitle("IBU vs ABV for IPA's and OtherAles")
 
 summary(bdat.imputed.IBU.clean$Style)
 ```
@@ -292,7 +293,7 @@ bdat.IPA.Vs.Ales.test = bdat.IPA.Vs.Ales[-trainIndicesKNN,]
 ```{r}
 trControl <- trainControl(method  = "cv",
                           number  = 10)
-
+set.seed(12)
 fit.bothScaled <- train(Style ~ IBU.clean + ABV,
              method     = "knn",
              preProcess = c("center", "scale"),
