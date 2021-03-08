@@ -3,12 +3,11 @@
 * Ricco Ferraro
 
 ## Introduction 
-
-## Restatement of problem
+## Problem Statement
 With the beer data given by Budweiser, this report will depict the apparent relationship between alcohol by volume(ABV) and international bitterness units(IBU) for a myriad of beers across the United States. The report also provides summary statistics such as minimums, medians and maximums with respect to ABV and IBU, as well as a deeper look in to the difference between IPA's and "Other Ale's"(any beer with Ale in the name) with respect to ABV and IBU. The research group reveals information that could be useful to Budweiser concerning the ounces of beers as they relate to each state of the US.
 
 ## Dataset
-The beers and breweries datasets provdided by Anheuser-Busch InBev contain information about 2410 US craft beers and 558 US breweries. The datasets descriptions are as follows. 
+The beers and breweries datasets provdided by Anheuser-Busch InBev contain information about 2410 US craft beers and 558 US breweries. The datasets descriptions are as follows.
 
 **Beers.csv**
 - list of 2,410 craft beers and their attributes.
@@ -27,6 +26,9 @@ Breweries.csv list of 558 breweries within the United States and their attribute
 - City: City where the brewery is located.
 - State: U.S. State where the brewery is located
 
+## Presentations
+Ricco Ferraro's YouTube Presentation: https://youtu.be/EhFG4kSpRKM
+
 ## Folder & File Information
 - `/Data` contains the beers and breweries data
 - `/CodeBook` contains the generated codebooks for our beers and breweries data
@@ -42,4 +44,4 @@ Breweries.csv list of 558 breweries within the United States and their attribute
 ![image](https://user-images.githubusercontent.com/13544830/110293890-fdd62a00-7fa3-11eb-8305-94bd48167a3a.png)
 5. Run All chunks in R-Studio. 
 
-Ricco Ferraro's YouTube Presentation: https://youtu.be/EhFG4kSpRKM
+
