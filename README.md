@@ -34,6 +34,7 @@ Breweries.csv list of 558 breweries within the United States and their attribute
 
 ## Folder & File Information
 - `/Data` contains the beers and breweries data
+- `/CodeBook` contains the generated codebooks for our beers and breweries data
 - `/Html` contains the knit Html Report for our Analysis
 - `/Presentation` contains our powerpoint slide deck
 - `/src` contains our R-Markdown (RMD) source code
@@ -43,7 +44,7 @@ Breweries.csv list of 558 breweries within the United States and their attribute
 2. Make sure that you have installed R and RStudio. 
 3. Open `BeersAndBrews.Rmd` in RStudio
 4. Use the RStudio Package installer to install the following packages from CRAN AND ensure that you are running the same version of R (4.0.2)
-![image](https://user-images.githubusercontent.com/13544830/110291733-13962000-7fa1-11eb-9b4d-b49ce31e0ecf.png)
+![image](https://user-images.githubusercontent.com/13544830/110293890-fdd62a00-7fa3-11eb-8305-94bd48167a3a.png)
 5. Run All chunks in R-Studio. 
 
 
