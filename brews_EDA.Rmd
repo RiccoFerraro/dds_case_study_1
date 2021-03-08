@@ -1,5 +1,5 @@
 ---
-title: "brewsTest"
+title: "Beers and Breweries Analysis"
 author: "Kebur Fantahun, Ricco Ferraro" 
 date: "03/07/2021"
 output: html_document
@@ -19,33 +19,31 @@ With the craft beer data provided by Anheuser-Busch InBev, this report will depi
 ### Dataset
 The beers and breweries dataset provided by Anheuser-Busch InBev contain information about 2410 US craft beers and 558 US breweries. The datasets are as follows:
 
-**Beers.csv:**
-* Name: Name of the beer.
-* Beer_ID: Unique identifier of the beer.
-* ABV: Alcohol by volume of the beer.
-* IBU: International Bitterness Units of the beer.
-* Brewery_ID: Brewery id associated with the beer.
-* Style: Style of the beer.
-* Ounces: Ounces of beer.
+**Beers.csv:**  
+* Name: Name of the beer.  
+* Beer_ID: Unique identifier of the beer.  
+* ABV: Alcohol by volume of the beer.  
+* IBU: International Bitterness Units of the beer.  
+* Brewery_ID: Brewery id associated with the beer.  
+* Style: Style of the beer.  
+* Ounces: Ounces of beer.  
 
-**Breweries.csv:**
-* Brew_ID: Unique identifier of the brewery.
-* Name: Name of the brewery.
-* City: City where the brewery is located.
-* State: U.S. State where the brewery is located.
+**Breweries.csv:**  
+* Brew_ID: Unique identifier of the brewery.  
+* Name: Name of the brewery.  
+* City: City where the brewery is located.  
+* State: U.S. State where the brewery is located.  
 
 
 ### Problem statment
-This report is tasked with:
-* analyzing the number of breweries in each state in the US
-* correcting missing IBU Data
-* analyzing minimum, median, and maximum ABV and IBU for each state
-* providing general summary statistics for ABV
-* determining if a relationship between IBU and ABV exists 
-* analyzing the IBU and ABV relationship for IPA's vs other Ales
-* providing other meaningful insight
-
-
+This report is tasked with:  
+* analyzing the number of breweries in each state in the US  
+* correcting missing IBU Data  
+* analyzing minimum, median, and maximum ABV and IBU for each state  
+* providing general summary statistics for ABV  
+* determining if a relationship between IBU and ABV exists  
+* analyzing the IBU and ABV relationship for IPA's vs other Ales  
+* providing other meaningful insight  
 
 # Libraries 
 ```{r load-packages}
@@ -62,10 +60,8 @@ library (readr)
 library(caret)
 ```
 
-
-### Utility functions 
 ```{r}
-
+# Utility function 
 isEmpty <- function(column) {
     is.na(column) | column == 0 | column == "" | column == " " | column == "NA" | column == "na" | column == "Na" | column == "nA" | column == "NaN" 
 }
@@ -76,14 +72,15 @@ isEmpty <- function(column) {
 ```{r message=FALSE, warning=FALSE}
 
 # Todo update this to just use file in current directory (which should exist because it is commited to the same repository in source control)
-beer_url="https://raw.githubusercontent.com/RiccoFerraro/dds_case_study_1/main/Beers.csv?token=ADHK27V7NC2MST3MBWULDE3AJLWSC"
-brewery_url="https://raw.githubusercontent.com/RiccoFerraro/dds_case_study_1/main/Breweries.csv?token=ADHK27SX6GX255OHB7MNDVDAJLWVQ"
+beer_url="https://raw.githubusercontent.com/RiccoFerraro/dds_case_study_1/main/Dataset/Beers.csv?token=AJ6R3OZKAOE252XTTGXCLQLAJ3OMS"
+brewery_url="https://raw.githubusercontent.com/RiccoFerraro/dds_case_study_1/main/Dataset/Breweries.csv?token=AJ6R3O3V2VLM7WCPOQLMFTLAJ3OOE"
 
 beer <-read_csv(url(beer_url))
 brew <-read_csv(url(brewery_url))
 ```
 
-*Note: we use the merge data in Question 1 and therefor we need to perform step 2 first.*
+*Note: we use the merge data in Question 1 and therefor we need to perform step 2 first.*  
+
 # 2. Merge beer data first with the breweries data & Print first 6 and last 6 oservations in merged file. 
 ```{r}
 ### EDA: Formatting, and dealing with NA's
@@ -117,8 +114,10 @@ sum(brewNum$unique_breweries)
 
 brewNum %>%  ggplot(aes(x=unique_breweries, y="",fill=State)) + geom_bar(stat = "identity", colour="black") + coord_polar("x", start=0) + ggtitle("Unique Breweries By state")
 ```
-# 3 Assess missing data 
-### Plot missing data for reference
+
+# 3. Assess missing data  
+
+## Plot missing data for reference
 ```{r}
 # Plot missing data (there should be none)
 bdat_mice_clean <- aggr(bdat, col=c('navyblue','yellow'),
@@ -151,8 +150,8 @@ bdat$Beer_ID!=2322& bdat$Beer_ID!=1750& bdat$Beer_ID!=710& bdat$Beer_ID!=273& bd
 
 
 ### Hand enter all data missing `IBU` AND `ABV`. Note: this data was all available publicly 
--Add style data for 2527 and 1635 by looking it up by hand. 
--Add IBU and ABV Data for many missing rows by looking up by hand (online via `BeerAdvocate.com` or `Untappd.com`)
+- Add style data for 2527 and 1635 by looking it up by hand.  
+- Add IBU and ABV Data for many missing rows by looking up by hand (online via `BeerAdvocate.com` or `Untappd.com`)
 ```{r}
 imputeMissingStyle <- function(beer_id, style){
     if(beer_id=="2527"){
@@ -218,11 +217,11 @@ sum(brewNum$unique_breweries)
 * Oregon has the most IBU at 138.
 ```{r}
 kable(head(arrange(bdat.imputed.IBU.clean, desc(ABV))))
-print("highest ABV State")
+print("Highest ABV State")
 arrange(bdat.imputed.IBU.clean, desc(ABV))[1,]
 
 kable(head(arrange(bdat.imputed.IBU.clean, desc(IBU.clean))))
-print("highest IBU State")
+print("Highest IBU State")
 arrange(bdat.imputed.IBU.clean, desc(IBU.clean))[1,]
 ```
 
@@ -239,7 +238,7 @@ bdat.imputed.IBU.clean %>% ggplot(aes(x=ABV, fill=State)) + geom_histogram(binwi
 bdat.imputed.IBU.clean %>% ggplot(aes(x=IBU.clean, fill=State)) + geom_histogram()  + ggtitle("Distribution of IBU by State")
 ```
 
-# 7 Relationship between the bitterness of the beer and its alcoholic content
+# 7. Relationship between the bitterness of the beer and its alcoholic content
 ### As can be seen, here are the scatter plots for IBU vs ABV, colorized by state with a ordinary least squares regression line. 
 These plots suggest visually that there is indeed a linear relationship between IBU and ABV and that there are some outliers at the very high and low ABV values. 
 ```{r}
@@ -391,7 +390,7 @@ CM
 ### Conclusion: 
 There is a significant relationship between `Ounces` and `State` for Ales that are either 12 vs 16 ounces. We were able to predict ounces by state (for ales) with an accuracy of 71.4% which is significantly better than random chance (50% accuracy). This suggests that when considering what size a beer should be sold in, it could be important to consider what state that beer is going to be brewed in. This helps align sales with the laws and preferences of that state. For example, Indiana has a high prevalence of 16 ounce ales, whereas Colorado or Texas both lean towards 12 ounce ales. It would be preferable to brew and sell 16 ounce beers in states like Indiana (or other states that have more 16 ounce ales) and 12 ounce beers in Colorado (or other states that have more 12 ounce ales). The reason for this association may be due to a variety of reasons including income, weather, local diet, and social norms for beer drinkers.
 
-# Overall Conclusion
+# Overall Conclusion:
 There are several note-worthy relationships in our craft beer dataset. For example, median IBU as well as median ABV per state vary by state for craft beers. When targeting sales of particular states' craft beer, it would be wise to consider the median IBU and median ABV for the current craft beers in that state. 
 
 Further, it is clear that there is a significant relationship between IBU and ABV and that the relationship varies for `IPA's` and for `other Ales`. We were able to predict the style of Ale (either IPA or other Ales) with an average Accuracy of 90% (P-value < 2e-16). Further, we can be 95% confident that the true accuracy for our model is between [0.8537, 0.9355]. On average, holding all other variables constant, we predict that when an ale is an IPA, it has a 2.373 increase in IBU per .01 increase in relative ABV, when compared to Other Ales. That is to say, IPA's generally have a higher bitterness for a given ABV than other ales and the ratio of IBU to ABV is generally higher for IPA's. We are 95% confident that this 'IPA' effect is between [1.01203617 3.73372852] per .01 increase in ABV. This 'IPA' effect applies to all craft beers sampled in the study, as well as all craft beers in the USA for which the beers sampled in the study are a good representation. Reasons for this 'IPA' effect could be simply that IPA's, on average, use a higher ratio of hops in the brewing process and will generally have higher bitterness for the same ABV when compared to other Ales. 
