@@ -58,6 +58,7 @@ library(psych)
 library(tidyverse)
 library (readr)
 library(caret)
+library(dataMaid)
 ```
 
 ```{r}
@@ -77,6 +78,9 @@ brewery_url="https://raw.githubusercontent.com/RiccoFerraro/dds_case_study_1/mai
 
 beer <-read_csv(url(beer_url))
 brew <-read_csv(url(brewery_url))
+
+makeCodebook(beer)
+makeCodebook(brew)
 ```
 
 *Note: we use the merge data in Question 1 and therefore we need to perform step 2 first.*  
