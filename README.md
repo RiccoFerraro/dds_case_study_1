@@ -28,6 +28,7 @@ Breweries.csv list of 558 breweries within the United States and their attribute
 
 ## Presentations
 Ricco Ferraro's YouTube Presentation: https://youtu.be/EhFG4kSpRKM
+Kebur Fantahun's YouTube Presentation: https://www.youtube.com/watch?v=CJnrZHncjWc
 
 ## Folder & File Information
 - `/Data` contains the beers and breweries data
