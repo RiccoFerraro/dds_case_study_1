@@ -72,8 +72,13 @@ isEmpty <- function(column) {
 ```{r message=FALSE, warning=FALSE}
 
 # Todo update this to just use file in current directory (which should exist because it is commited to the same repository in source control)
+<<<<<<< HEAD
 beer_url="https://raw.githubusercontent.com/RiccoFerraro/dds_case_study_1/main/Dataset/Beers.csv?token=AJ6R3OZKAOE252XTTGXCLQLAJ3OMS"
 brewery_url="https://raw.githubusercontent.com/RiccoFerraro/dds_case_study_1/main/Dataset/Breweries.csv?token=AJ6R3O3V2VLM7WCPOQLMFTLAJ3OOE"
+=======
+beer_url="https://raw.githubusercontent.com/RiccoFerraro/dds_case_study_1/main/Dataset/Beers.csv?token=AJ6R3OZKQJEX4ZWAB3EVK5LAJ3TCU"
+brewery_url="https://raw.githubusercontent.com/RiccoFerraro/dds_case_study_1/main/Dataset/Breweries.csv?token=AJ6R3OYC5DLPDUKPCCH333DAJ3TAQ"
+>>>>>>> 6fceeba84772a1d510f425cde34590901e08e789
 
 beer <-read_csv(url(beer_url))
 brew <-read_csv(url(brewery_url))
