@@ -27,7 +27,7 @@ Breweries.csv list of 558 breweries within the United States and their attribute
 - State: U.S. State where the brewery is located
 
 ## Presentations
-Ricco Ferraro's YouTube Presentation: https://youtu.be/EhFG4kSpRKM
+Ricco Ferraro's YouTube Presentation: https://youtu.be/EhFG4kSpRKM  
 Kebur Fantahun's YouTube Presentation: https://www.youtube.com/watch?v=CJnrZHncjWc
 
 ## Folder & File Information
