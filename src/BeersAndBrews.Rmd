@@ -1,0 +1,403 @@
+---
+title: "Beers and Breweries Analysis"
+author: "Kebur Fantahun, Ricco Ferraro" 
+date: "03/07/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_knit$set(root.dir= normalizePath('..'))
+knitr::opts_chunk$set(error = FALSE)
+```
+
+# Introduction 
+With the pandemic in full swing, craft breweries across the nation are closing their doors. Social distancing and other precautionary stay at home orders have forever changed the market for craft beer. This presents a unique opportunity to Anheuser-Busch InBev. In many ways, the market is wide open. Craft beer, especially IPA's and ales in the US can be shown to follow certain trends with regards to bitterness and ABV. Adhering to these trends may help ensure, when choosing which breweries to procure for example, that an investment is successful. 
+
+With the craft beer data provided by Anheuser-Busch InBev, this report will depict the apparent relationship between alcohol by volume(ABV) and international bitterness units(IBU) for myriad beers across the United States. The report also provides summary statistics such as minimums, medians and maximums with respect to ABV and IBU, as well as a deeper look in to the difference between IPA's and "Other Ale's"(any beer with Ale in the name) with respect to ABV and IBU. Our analysis reveals information that could be useful to Anheuser-Busch InBev concerning beer volumes in ounces as they relate to each state of the US.
+
+### Dataset
+The beers and breweries dataset provided by Anheuser-Busch InBev contain information about 2410 US craft beers and 558 US breweries. The datasets are as follows:
+
+**Beers.csv:**  
+* Name: Name of the beer.  
+* Beer_ID: Unique identifier of the beer.  
+* ABV: Alcohol by volume of the beer.  
+* IBU: International Bitterness Units of the beer.  
+* Brewery_ID: Brewery id associated with the beer.  
+* Style: Style of the beer.  
+* Ounces: Ounces of beer.  
+
+**Breweries.csv:**  
+* Brew_ID: Unique identifier of the brewery.  
+* Name: Name of the brewery.  
+* City: City where the brewery is located.  
+* State: U.S. State where the brewery is located.  
+
+
+### Problem statment
+This report is tasked with:  
+* analyzing the number of breweries in each state in the US  
+* correcting missing IBU Data  
+* analyzing minimum, median, and maximum ABV and IBU for each state  
+* providing general summary statistics for ABV  
+* determining if a relationship between IBU and ABV exists  
+* analyzing the IBU and ABV relationship for IPA's vs other Ales  
+* providing other meaningful insight  
+
+# Libraries 
+```{r load-packages}
+library(tidyverse)
+library(magrittr)
+library(knitr)
+library(rmarkdown)
+library(DT)
+library(mice)
+library(VIM)
+library(psych)
+library(tidyverse)
+library (readr)
+library(caret)
+```
+
+```{r}
+# Utility function 
+isEmpty <- function(column) {
+    is.na(column) | column == 0 | column == "" | column == " " | column == "NA" | column == "na" | column == "Na" | column == "nA" | column == "NaN" 
+}
+```
+
+
+### Import Data 
+```{r message=FALSE, warning=FALSE}
+
+# Todo update this to just use file in current directory (which should exist because it is commited to the same repository in source control)
+beer_url="https://raw.githubusercontent.com/RiccoFerraro/dds_case_study_1/main/Dataset/Beers.csv?token=AJ6R3OZKAOE252XTTGXCLQLAJ3OMS"
+brewery_url="https://raw.githubusercontent.com/RiccoFerraro/dds_case_study_1/main/Dataset/Breweries.csv?token=AJ6R3O3V2VLM7WCPOQLMFTLAJ3OOE"
+
+beer <-read_csv(url(beer_url))
+brew <-read_csv(url(brewery_url))
+```
+
+*Note: we use the merge data in Question 1 and therefore we need to perform step 2 first.*  
+
+# 2. Merge beer data first with the breweries data & Print first 6 and last 6 oservations in merged file. 
+```{r}
+### EDA: Formatting, and dealing with NA's
+
+# beer$Brewery_id
+# names(beer)[names(beer) == "Brewery_id"] <- "Brew_ID"
+
+bdat = merge(beer, brew, by.x = "Brewery_id", by.y = "Brew_ID")
+names(bdat)[names(bdat) == "Name.x"] <- "Drink_name"
+names(bdat)[names(bdat) == "Name.y"] <- "Brewery"
+
+kable(head(bdat))
+kable(tail(bdat))
+
+```
+
+
+# 1. How many breweries are in each state?
+There are a range of breweries for state and they are visible in the state. This could be due to a variety of reasons such as taxation, availability and cost of materials, releastate, demographics or that state etc. In our dataset, Colorado for example has 47 craft breweries and California has 39 craft breweries and Arizona has 11. This dataset obviously does not represent all craft breweries in the state, so it is important to note that it is the relative proportion of craft breweries we are interested in here. In many cases, the craft brewery number is most likely tied to state population. See the Pie chart for the breakdown. 
+See Table:
+```{r}
+bdat$State = as.factor(bdat$State)
+brewNum = bdat %>% 
+  filter(!is.na(bdat) & !is.na(Brewery_id)) %>% 
+  group_by(State) %>% summarize(unique_breweries=length(unique(Brewery_id))) 
+
+datatable(brewNum)
+
+print("Total Unique Breweries: ")
+sum(brewNum$unique_breweries)
+
+brewNum %>%  ggplot(aes(x=unique_breweries, y="",fill=State)) + geom_bar(stat = "identity", colour="black") + coord_polar("x", start=0) + ggtitle("Unique Breweries By state")
+```
+
+# 3. Assess missing data  
+
+## Plot missing data for reference
+```{r}
+# Plot missing data (there should be none)
+bdat_mice_clean <- aggr(bdat, col=c('navyblue','yellow'),
+                    numbers=TRUE, sortVars=TRUE,
+                    labels=names(bdat), cex.axis=.7,
+                    gap=3, ylab=c("Missing Data (distribution)","Missing Data (Pattern)"))
+summary(bdat)
+```
+
+
+### Remove Data for entries missing both IBU and ABV when there is no data online
+1. Special Release, The Crowler^tm, Can'd aid foundation are missing ABV/IBU/Style
+2. Cedar creek - Special Release is ambiguous, missing ABV/IBU/Style and will be dropped as it does not solve the QOI. 
+3. Oskar Blues Brewery - The Crowler is not an actual beer but a type of can
+4. Oskar Blues Brewery - Can'd aid foundation is a relief effort that sends water so it does not fit in the dataset.
+5. Beer ID 2364, Royal Lager of Weston Brewing has no ABV/IBU
+6. Same for BID - 2322	Fort Pitt Brewing Company	Fort Pitt Ale
+7. Oskar Blues Brewery	Birth IPA, 1750
+8. 710, no data
+9. MillKing It Productions	AXL Pale Ale, 273 - out of business no info
+10. 1095 no data
+11. 963 no data
+
+```{r}
+# the following line removes these NA points
+bdat_clean <- bdat %>% filter(bdat$Beer_ID!=2210 & bdat$Beer_ID!=1796 & bdat$Beer_ID!=1790 & bdat$Beer_ID!=2364&
+bdat$Beer_ID!=2322& bdat$Beer_ID!=1750& bdat$Beer_ID!=710& bdat$Beer_ID!=273& bdat$Beer_ID!=1095& bdat$Beer_ID!=963)
+
+```
+
+
+### Hand enter all data missing `IBU` AND `ABV`. Note: this data was all available publicly 
+- Add style data for 2527 and 1635 by looking it up by hand.  
+- Add IBU and ABV Data for many missing rows by looking up by hand (online via `BeerAdvocate.com` or `Untappd.com`)
+```{r}
+imputeMissingStyle <- function(beer_id, style){
+    if(beer_id=="2527"){
+    style = "Scottish-Style Amber Ale"
+  } 
+    if(beer_id=="1635"){
+    style = "Lager"
+    } 
+  style
+}
+
+# Update ABV and IBU for NA's; to hand selected data use  %>% select(Beer_ID, Brewery, Drink_name, ABV, IBU)
+bdat_hand_updated <-bdat_clean %>% 
+    filter(is.na(ABV) & is.na(IBU)) %>% rows_update(tibble(Beer_ID = c(2382, 2381, 1948, 1347, 2595, 1163, 940, 2490, 2489, 2488, 2487, 2472, 779, 364, 60, 59, 58, 57, 652, 2344, 2342, 1752, 61, 1724, 774, 121, 1784, 1541, 1025, 219, 307, 1096, 1056, 944, 731, 870, 869, 868, 867, 763, 504, 524, 450, 449, 448, 447, 446, 520, 506, 142, 335, 64), ABV = c(0.075, 0.055, 0.045, 0.060, 0.062, 0.0499, 0.06, 0.061, 0.038, 0.057, 0.051, 0.055, 0.05, 0.07, 0.052, 0.05, 0.049, 0.051, 0.07, 0.055, 0.049, 0.07, 0.052, 0.07, 0.058, 0.052, 0.07, 0.052, 0.086, 0.051, 0.06, 0.062, 0.055, 0.05, 0.055, 0.042, 0.05, 0.045, 0.039, 0.052, 0.072, 0.045, 0.061, 0.064, 0.058, 0.049, 0.05, 0.042, 0.05, 0.065, 0.065, 0.05), IBU = c(NA, 3.57, 65, 23, NA, 15, NA, 40, 7, 32, 35, NA, 5, NA, NA, NA, NA, NA, 80, NA, NA, NA, 28, NA, NA, 12, 40, 21, 80, NA, 38, NA, NA, 25, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, 70, 17)))
+
+bdat_with_hand_updates = merge(bdat_hand_updated,bdat_clean,by="Beer_ID",all.y = TRUE) %>% rowwise %>% mutate(Brewery_id=Brewery_id.y, Drink_name=Drink_name.y, Ounces
+=Ounces.y, Brewery=Brewery.y, City=City.y, State=State.y, Style = imputeMissingStyle(Beer_ID, Style.y),IBU = if_else(isEmpty(IBU.y), IBU.x, IBU.y), ABV = if_else(isEmpty(ABV.y), ABV.x, ABV.y)) %>% select(Brewery_id, ABV, IBU, Drink_name, Style, Ounces, Brewery, City, State)
+```
+
+
+### Impute IBU based on Median IBU by style for entries that ONLY lack IBU data
+```{r}
+#Summary stats before imputation
+kable(summary(bdat_with_hand_updates))
+
+# Impute IBU
+bdat.IBU.Summary <- bdat_with_hand_updates %>% filter(!isEmpty(IBU)) %>% group_by(Style) %>% summarise(median_IBU_by_style=median(IBU))
+bdat.imputed.IBU <-merge(bdat_with_hand_updates, bdat.IBU.Summary, by="Style")  %>% mutate(IBU.clean = if_else(isEmpty(IBU), median_IBU_by_style, as.double(IBU)))
+bdat.imputed.IBU.clean = bdat.imputed.IBU[,-c(4)]
+bdat.imputed.IBU.clean %>% filter(isEmpty(Style))
+
+# Summary stats after imputation
+kable(summary(bdat.imputed.IBU.clean))
+```
+
+### Plot missing data to show it has all been resolved. 
+```{r}
+# Plot missing data (there should be none)'
+aggr(bdat.imputed.IBU.clean, col=c('navyblue','yellow'),
+                    numbers=TRUE, sortVars=TRUE,
+                    labels=names(bdat.imputed.IBU.clean), cex.axis=.7,
+                    gap=3, ylab=c("Missing Data (distribution)","Missing Data (Pattern)")) 
+summary(bdat.imputed.IBU.clean)
+```
+
+
+# 4. Median ABV and IBU per state (See output for values)
+We can see that there is a difference between states for median IBU and ABV. This is likely due to a variety of reasons such as local laws, climate, demographics, local diet, income per capita, etc. For example, West Virginia has the highest median IBU and New Hampshire has the lowest median IBU per state. Kentucky has the highest median ABV. Utah has the lowest ABV per state (state law mandates 4.0% for most beers)
+```{r}
+median.imputed.by.state <- bdat.imputed.IBU.clean  %>% 
+  group_by(State) %>% summarize(median_abv=median(ABV), median_ibu=median(IBU.clean)) 
+
+median.imputed.by.state %>% ggplot(aes(y=median_abv, x=State, fill=State)) + geom_bar(stat="identity")+ ggtitle("Median ABV by state")
+
+median.imputed.by.state %>% ggplot(aes(y=median_ibu, x=State, fill=State)) + geom_bar(stat="identity") + ggtitle("Median IBU by state")
+print("Total Unique Breweries: ")
+sum(brewNum$unique_breweries)
+```
+
+
+# 5.  Which state has the maximum alcoholic (ABV) beer? Which state has the most bitter (IBU) beer? (See output for values)
+* Colorado has the max ABV at 0.128.
+* Oregon has the most IBU at 138.
+```{r}
+kable(head(arrange(bdat.imputed.IBU.clean, desc(ABV))))
+print("Highest ABV State")
+arrange(bdat.imputed.IBU.clean, desc(ABV))[1,]
+
+kable(head(arrange(bdat.imputed.IBU.clean, desc(IBU.clean))))
+print("Highest IBU State")
+arrange(bdat.imputed.IBU.clean, desc(IBU.clean))[1,]
+```
+
+
+# 6. Summary statistics and Histogram for ABV and IBU
+As can be seen IBU is right skewed. The distribution per state seems fairly similar.  Most of the beer is located around the lower IBU which could indicate that more bitter beer is less popular and thus sold less.
+Similarly the distribution of ABV is right skewed as we would expect for values that can only be positive.  It seems that most popular beers will have around 5% ABV so that is the peak we see in the middle. 
+Minimum ABV is 0.027, the maximum ABV is 0.128. The minimum being 2.7 suggests no non-alcoholic beer is present in our dataset and that the lowest ABV is similar to a Raddler or a VERY weak session ale. The highest ABV is consistent with Barley wines, Imperial Stouts, or other High gravity beers. The inter-quartile range for the mean 50% of beers ranges from .050 to .0670 suggesting most craft beers have a fairly predictable ABV. 
+
+```{r}
+kable(summary(bdat.imputed.IBU.clean))
+
+bdat.imputed.IBU.clean %>% ggplot(aes(x=ABV, fill=State)) + geom_histogram(binwidth = .003)  + ggtitle("Distribution of ABV by State")
+bdat.imputed.IBU.clean %>% ggplot(aes(x=IBU.clean, fill=State)) + geom_histogram()  + ggtitle("Distribution of IBU by State")
+```
+
+# 7. Relationship between the bitterness of the beer and its alcoholic content
+### As can be seen, here are the scatter plots for IBU vs ABV, colorized by state with a ordinary least squares regression line. 
+These plots suggest visually that there is indeed a linear relationship between IBU and ABV and that there are some outliers at the very high and low ABV values. 
+```{r}
+bdat.imputed.IBU.clean %>% ggplot(aes(x=ABV, y=IBU.clean, colour=State)) + geom_point() + ggtitle("IBU vs ABV")
+bdat.imputed.IBU.clean %>% ggplot(aes(x=ABV, y=IBU.clean)) + geom_point() + geom_smooth(method="lm") + ggtitle("IBU vs ABV")
+```
+
+### Linear Regression 
+Note: Assumptions are met for linear regression, we can see that there are many significant interaction terms between ABV and State and that ABV is significant with respect to IBU.
+Our model includes main effects of State and ABV as well as interactions for State with ABV. For many states, the interaction terms and main effects were found to be significant. For example, the interaction term between the state Migichigan and ABV was found to have a p-value of 0.000211. Significant main effects on IBU from state were also noticed across many states (example ABV P=8.38e-06). 
+In conclusion 
+```{r}
+#Linear-Linear
+linearlinear <- lm(IBU.clean~State + State*ABV + ABV, data=bdat.imputed.IBU.clean)
+plot(linearlinear)
+confint(linearlinear)
+summary(linearlinear)
+```
+
+
+# 8. Difference with respect to IBU and ABV between IPAs and other Ales
+To investigate the difference between `IBU` and `ABV` for `IPA's vs OtherAles` we first perform some nominal data cleanup and visualize IBU vs ABV for `IPA's vs otherAles`. We then use KNN to classify style, either `IPA` or `otherAle`, to highlight that there is a significant difference between the relationship of IBU and ABV for `IPA's` and `otherAles`
+
+### Data Prep and Visualization 
+1. Filter out all data that is not an `Ale`. Then bucket anything with `IPA` or `India Pale Ale` as `IPA` and all other beers with the word `Ale` in their style as `OtherAle`.  
+2. Plot distributions for ABV for `IPA's` and `otherAles`
+3. Then plot IBU and ABV for `IPA's` and `otherAles` for IPA's and OtherALes
+
+**Note: American Pale Ale is VERY similar to IPA but we call it "other" ale**
+```{r}
+summary(as.factor(bdat.imputed.IBU.clean$Style))
+bdat.IPA.Vs.Ales = bdat.imputed.IBU.clean %>% mutate(Style = if_else(str_detect(Style, "India Pale Ale|IPA"), "IPA", if_else(str_detect(Style, "Ale"),"OtherAle", Style))) %>% filter(Style == "IPA" | Style == "OtherAle") %>% mutate(Style = as.factor(Style))
+head(bdat.IPA.Vs.Ales)
+
+bdat.IPA.Vs.Ales %>% ggplot(aes(x=ABV, fill= Style)) + geom_histogram() + ggtitle("Histogram of IPA vs OtherAle for ABV")
+bdat.IPA.Vs.Ales %>% ggplot(aes(x=ABV, y=IBU.clean, colour= Style)) + geom_point() + geom_smooth(method="lm") + ggtitle("IBU vs ABV for IPA's and OtherAles")
+
+summary(bdat.imputed.IBU.clean$Style)
+```
+### Test split
+Split the data into 85% train and 15% test. Only train our algorithms on training data with crossvalidation. Use test split only for accuracy and prediction metric calculation. 
+```{r}
+set.seed(1234)
+splitPercKNN = .85
+trainIndicesKNN = sample(1:dim(bdat.IPA.Vs.Ales)[1],round(splitPercKNN * dim(bdat.IPA.Vs.Ales)[1]))
+bdat.IPA.Vs.Ales.train = bdat.IPA.Vs.Ales[trainIndicesKNN,]
+bdat.IPA.Vs.Ales.test = bdat.IPA.Vs.Ales[-trainIndicesKNN,]
+```
+
+### KNN for `IPA's` vs `Other Ales`
+```{r}
+trControl <- trainControl(method  = "cv",
+                          number  = 10)
+set.seed(12)
+fit.bothScaled <- train(Style ~ IBU.clean + ABV,
+             method     = "knn",
+             preProcess = c("center", "scale"),
+             tuneGrid   = expand.grid(k = 1:10),
+             trControl  = trControl,
+             metric     = "Accuracy",
+             data       = bdat.IPA.Vs.Ales.train)
+
+# fit.Both appears to perform the best as far as accuracy goes. 
+
+classifications <- predict(fit.bothScaled, bdat.IPA.Vs.Ales.test)
+CM = confusionMatrix(table(bdat.IPA.Vs.Ales.test$Style, classifications))
+CM
+```
+
+### OLS Multiple Linear Regression for `IPA's` vs `Other Ales`
+Use least squared multiple linear regression to highlight specific relationships between IBU and ABV for style IPA and style otherAle. 
+- NOTE: make the unit increase in interpretation be in terms of .01 unit increase in ABV
+```{r}
+linearlinear <- lm(IBU.clean~Style +Style*ABV + ABV, data=bdat.IPA.Vs.Ales.train)
+plot(linearlinear)
+confint(linearlinear)
+summary(linearlinear)
+```
+
+### LDA and KNN to predict style based on IBU and ABV Individually
+Here we use LDA and KNN to assess the relationship between IBU and Style as well as ABV and style. 
+```{r}
+lda.fit.IBU = train(Style ~ IBU.clean, data=bdat.IPA.Vs.Ales.train, method="lda",
+                trControl = trainControl(method = "cv"),
+                             metric     = "Accuracy")
+
+knn.fit.IBU <- train(Style ~ IBU.clean,
+             method     = "knn",
+             tuneGrid   = expand.grid(k = 1:10),
+             trControl  = trControl,
+             metric     = "Accuracy",
+             data       = bdat.IPA.Vs.Ales.train)
+
+lda.fit.ABV = train(Style ~ ABV, data=bdat.IPA.Vs.Ales.train, method="lda",
+                trControl = trainControl(method = "cv"),
+                             metric     = "Accuracy")
+
+knn.fit.ABV <- train(Style ~ ABV,
+             method     = "knn",
+             tuneGrid   = expand.grid(k = 1:10),
+             trControl  = trControl,
+             metric     = "Accuracy",
+             data       = bdat.IPA.Vs.Ales.train)
+
+```
+### Conclusion: 
+It is clear that there is a significant relationship between IBU and ABV and that the relationship varies for `IPA's` and for `other Ales`. We were able to predict the style of Ale (either IPA or other Ales) with an average Accuracy of 90% (P-value < 2e-16). Further, we can be 95% confident that the true accuracy for our model is between [0.8537, 0.9355]. On average, holding all other variables constant, we predict that when an ale is an IPA, it has a 2.373 increase in IBU per .01 increase in relative ABV, when compared to Other Ales. That is to say, IPA's generally have a higher bitterness for a given ABV than other ales and the ratio of IBU to ABV is generally higher for IPA's. We are 95% confident that this 'IPA' effect is between [1.01203617 3.73372852] per .01 increase in ABV. This 'IPA' effect applies to all craft beers sampled in the study, as well as all craft beers in the USA for which the beers sampled int the study are a good representation. Reasons for this 'IPA' effect could be simply that IPA's, on average, use a higher ratio of hops in the brewing process and will generally have higher bitterness for the same ABV when compared to other Ales. 
+
+That said, it can be noted that IPA's generally have a higher ABV (IBU not fixed). The skew of IPA's toward higher ABV could also be due to the fact beer drinkers generally drink fewer IPA's and are willing to spend more money on them. As such, to achieve the same 'buzz' the discerning IPA drinker will gravitate towards higher IBU AND Higher ABV. 
+
+# 9.  We will knock your socks off! 
+To show that there is a relationship between State and Ounces for all Ales, specifically  12 vs 16 ounces, we perform a brief analysis of Ounces vs. State. What we are interested in here is whether or not a State like California or Michigan  differ in their preference for 12 vs 16 ounce beers. 
+
+### Data Cleanup and Visualization 
+1. Filter out all ales that are not either `12` or `16` ounces in volume. 
+2. We plot the ratios of `12` vs `16` ounce Ales for each state.  
+```{r}
+bdat.IPA.Vs.Ales.train.Extra = data.frame(bdat.IPA.Vs.Ales.train, stringsAsFactors=TRUE)
+bdat.IPA.Vs.Ales.test.Extra = data.frame(bdat.IPA.Vs.Ales.test, stringsAsFactors=TRUE)
+bdat.IPA.Vs.Ales.train.Extra$Ounces = as.factor(bdat.IPA.Vs.Ales.train.Extra$Ounces)
+bdat.IPA.Vs.Ales.test.Extra$Ounces = as.factor(bdat.IPA.Vs.Ales.test.Extra$Ounces)
+bdat.IPA.Vs.Ales.train.Extra.filtered <- bdat.IPA.Vs.Ales.train.Extra  %>% filter(Ounces=="12" | Ounces=="16") %>% mutate(Ounces=as.factor(as.double(as.character(Ounces))))
+bdat.IPA.Vs.Ales.test.Extra.filtered <-  bdat.IPA.Vs.Ales.test.Extra  %>% filter(Ounces=="12" | Ounces=="16") %>% mutate(Ounces=as.factor(as.double(as.character(Ounces))))
+
+#bdat.IPA.Vs.Ales.train.Extra.filtered %>% ggplot(aes(y = IBU.clean, x=as.double(as.character(bdat.IPA.Vs.Ales.train.Extra$Ounces)))) +  geom_smooth(method=lm)
+bdat.IPA.Vs.Ales.train.Extra.filtered %>% ggplot(aes(x=Ounces, fill=State)) + geom_bar() + facet_wrap(~State) + ggtitle("Count of 12 and 16 Ounce ales by State")
+```
+
+### Analysis: KNN & confusion matrix
+1. We use KNN with the optimal cross validated value of K (usually k=8) to predict Ounces (12 or 16) by state. 
+2. Generate a confusion matrix via test data to assess the performance of the prediction
+3. Accuracy ends up being around 0.7137 which is roughly 21% better than the existing random chance that we would have for predicting either 12 or 16 ounces. 
+```{r}
+set.seed(1234)
+knn.fit.OuncesByState <- train(Ounces ~ State,
+             method     = "knn",
+             preProcess = c("center", "scale"),
+             tuneGrid   = expand.grid(k = 1:10),
+             trControl  = trControl,
+             metric     = "Accuracy",
+             data       = bdat.IPA.Vs.Ales.train.Extra.filtered)
+
+
+classifications <- predict(knn.fit.OuncesByState, bdat.IPA.Vs.Ales.test.Extra.filtered)
+CM = confusionMatrix(table(bdat.IPA.Vs.Ales.test.Extra.filtered$Ounces, classifications))
+CM
+```
+
+### Conclusion: 
+There is a significant relationship between `Ounces` and `State` for Ales that are either 12 vs 16 ounces. We were able to predict ounces by state (for ales) with an accuracy of 71.4% which is significantly better than random chance (50% accuracy). This suggests that when considering what size a beer should be sold in, it could be important to consider what state that beer is going to be brewed in. This helps align sales with the laws and preferences of that state. For example, Indiana has a high prevalence of 16 ounce ales, whereas Colorado or Texas both lean towards 12 ounce ales. It would be preferable to brew and sell 16 ounce beers in states like Indiana (or other states that have more 16 ounce ales) and 12 ounce beers in Colorado (or other states that have more 12 ounce ales). The reason for this association may be due to a variety of reasons including income, weather, local diet, and social norms for beer drinkers.
+
+# Overall Conclusion:
+There are several note-worthy relationships in our craft beer dataset. For example, median IBU as well as median ABV per state vary by state for craft beers. When targeting sales of particular states' craft beer, it would be wise to consider the median IBU and median ABV for the current craft beers in that state. 
+
+Further, it is clear that there is a significant relationship between IBU and ABV and that the relationship varies for `IPA's` and for `other Ales`. We were able to predict the style of Ale (either IPA or other Ales) with an average Accuracy of 90% (P-value < 2e-16). Further, we can be 95% confident that the true accuracy for our model is between [0.8537, 0.9355]. On average, holding all other variables constant, we predict that when an ale is an IPA, it has a 2.373 increase in IBU per .01 increase in relative ABV, when compared to Other Ales. That is to say, IPA's generally have a higher bitterness for a given ABV than other ales and the ratio of IBU to ABV is generally higher for IPA's. We are 95% confident that this 'IPA' effect is between [1.01203617 3.73372852] per .01 increase in ABV. This 'IPA' effect applies to all craft beers sampled in the study, as well as all craft beers in the USA for which the beers sampled in the study are a good representation. Reasons for this 'IPA' effect could be simply that IPA's, on average, use a higher ratio of hops in the brewing process and will generally have higher bitterness for the same ABV when compared to other Ales. 
+
+That said, it can be noted that IPA's generally have a higher ABV (IBU not fixed). The skew of IPA's toward higher ABV could also be due to the fact beer drinkers generally drink fewer IPA's and are willing to spend more money on them. As such, to achieve the same 'buzz' the discerning IPA drinker will gravitate towards higher IBU AND higher ABV. 
+
+There is also a significant relationship between `Ounces` and `State` for Ales that are either 12 vs 16 ounces. We were able to predict ounces by state (for ales) with an accuracy of 71.4% which is significantly better than random chance (50% accuracy). This suggests that when considering what size a beer should be sold in, it could be important to consider what state that beer is going to be brewed in. This helps align sales with the laws and preferences of that state. For example, Indiana has a high prevalence of 16 ounce ales, whereas Colorado or Texas both lean towards 12 ounce ales. It would be preferable to brew and sell 16 ounce beers in states like Indiana (or other states that have more 16 ounce ales) and 12 ounce beers in Colorado (or other states that have more 12 ounce ales). The reason for this association may be due to a variety of reasons including income, weather, local diet, and social norms for beer drinkers.
+
+We recommend that Anheuser-Busch InBev stay consistent with established patterns for given states. To tend towards breweries which produce IPA's and Ale's that can be accurately predicted with our models above. To favor beers and breweries who have average ABV, IBU, and volume not dissimilar from established norms for that state. Given how strapped the market for craft beer and craft breweires is, the opportuinty is ripe. 
+
