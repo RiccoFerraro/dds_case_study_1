@@ -33,10 +33,10 @@ Breweries.csv list of 558 breweries within the United States and their attribute
 - State: U.S. State where the brewery is located
 
 ## Folder & File Information
-`/Data` contains the beers and breweries data
-`/Html` contains the knit Html Report for our Analysis
-`/Presentation` contains our powerpoint slide deck
-`/src` contains our R-Markdown (RMD) source code
+- `/Data` contains the beers and breweries data
+- `/Html` contains the knit Html Report for our Analysis
+- `/Presentation` contains our powerpoint slide deck
+- `/src` contains our R-Markdown (RMD) source code
 
 ## Instructions to Run our code locally
 1. Clone this repository to the directory of choice
