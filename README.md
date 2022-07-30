@@ -2,7 +2,6 @@
 * Kebur Fantahun
 * Ricco Ferraro
 
-## Introduction 
 ## Problem Statement
 With the beer data given by Budweiser, this report will depict the apparent relationship between alcohol by volume(ABV) and international bitterness units(IBU) for a myriad of beers across the United States. The report also provides summary statistics such as minimums, medians and maximums with respect to ABV and IBU, as well as a deeper look in to the difference between IPA's and "Other Ale's"(any beer with Ale in the name) with respect to ABV and IBU. The research group reveals information that could be useful to Budweiser concerning the ounces of beers as they relate to each state of the US.
 
